@@ -1,0 +1,37 @@
+{
+  "name": "example_send_message",
+  "display_name": "Example Send Message",
+  "description": "Secuencia de ejemplo para escribir y enviar un mensaje",
+  "created": "2026-02-05T00:00:00",
+  "actions": [
+    {
+      "type": "click-on",
+      "target": "browser_icon"
+    },
+    {
+      "type": "wait",
+      "seconds": 1.0
+    },
+    {
+      "type": "click-on",
+      "target": "chat_tab"
+    },
+    {
+      "type": "wait",
+      "seconds": 1.0
+    },
+    {
+      "type": "click-on",
+      "target": "message_input"
+    },
+    {
+      "type": "write",
+      "text": "Hola, este es un mensaje de ejemplo."
+    },
+    {
+      "type": "click-on",
+      "target": "send_button"
+    }
+  ],
+  "updated": "2026-02-05T00:00:00"
+}

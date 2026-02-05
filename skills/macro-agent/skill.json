@@ -1,0 +1,7 @@
+{
+    "name": "macro-agent",
+    "description": "Control completo de UI: buscar elementos en pantalla, mover mouse (smooth), clicks, teclado, hotkeys, crear y ejecutar secuencias de acciones. Usa este skill para automatizar cualquier aplicación de escritorio.",
+    "version": "1.0.0",
+    "entrypoint": "macro_agent.py",
+    "outputs": ["application/json"]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "example_open_browser",
+  "display_name": "Example Open Browser",
+  "description": "Secuencia de ejemplo para abrir un navegador",
+  "created": "2026-02-05T00:00:00",
+  "actions": [
+    {
+      "type": "click-on",
+      "target": "browser_icon"
+    },
+    {
+      "type": "wait",
+      "seconds": 1.0
+    }
+  ],
+  "updated": "2026-02-05T00:00:00"
+}

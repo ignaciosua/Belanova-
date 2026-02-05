@@ -1,0 +1,17 @@
+.env
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+build/
+dist/
+*.egg-info/
+
+# Macro-agent runtime data (can contain sensitive personal info)
+skills/macro-agent/data/local/
+skills/region-capture/data/local/

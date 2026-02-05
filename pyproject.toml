@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "belanova"
+version = "0.1.0"
+description = "Asistente de voz con ASR, OpenRouter, MCP y TTS."
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+dependencies = [
+  "python-dotenv",
+  "requests",
+  "numpy",
+  "sounddevice",
+  "pynput",
+  "torch",
+  "transformers",
+  "accelerate",
+  "safetensors",
+  "kokoro>=0.9.4",
+  "soundfile",
+  "librosa",
+  "pyrubberband",
+  "mcp",
+  "anyio",
+  "pypdf>=4.0.0",
+  "pymupdf",
+  "pillow",
+]
+
+[project.scripts]
+belanova = "belanova.app.runtime:main"
+belanova-doctor = "belanova.app.diagnostics:main"
+belanova-tts-test = "belanova.app.tts_test:main"
+belanova-output-scan = "belanova.app.output_scan:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

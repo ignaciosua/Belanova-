@@ -25,7 +25,7 @@ def _copy_metadata(writer: PdfWriter, reader: PdfReader) -> None:
 
 
 def _copy_boxes(dst: PageObject, src: PageObject) -> None:
-    # Conserva el tamaño y las cajas del PDF original (media/crop/etc).
+    # Preserve original PDF page size and boxes (media/crop/etc).
     for name in ("mediabox", "cropbox", "bleedbox", "trimbox", "artbox"):
         try:
             setattr(dst, name, getattr(src, name))
@@ -48,19 +48,19 @@ def two_up(
     drop_last: bool,
 ) -> int:
     if not input_pdf.exists():
-        raise FileNotFoundError(f"No existe: {input_pdf}")
+        raise FileNotFoundError(f"Does not exist: {input_pdf}")
     if output_pdf.exists() and not overwrite:
-        raise FileExistsError(f"Ya existe: {output_pdf} (usa --overwrite)")
+        raise FileExistsError(f"Already exists: {output_pdf} (use --overwrite)")
 
     reader = PdfReader(str(input_pdf))
     if reader.is_encrypted:
         if not password:
-            raise RuntimeError("PDF encriptado (falta --password)")
+            raise RuntimeError("Encrypted PDF (missing --password)")
         ok = reader.decrypt(password)
         if not ok:
-            raise RuntimeError("Password incorrecta")
+            raise RuntimeError("Invalid password")
 
-    # Normaliza rotación para que el contenido tenga /Rotate=0
+    # Normalize rotation so content has /Rotate=0.
     for p in reader.pages:
         try:
             p.transfer_rotation_to_content()
@@ -68,10 +68,10 @@ def two_up(
             pass
 
     if not reader.pages:
-        raise RuntimeError("PDF sin páginas")
+        raise RuntimeError("PDF has no pages")
 
     if mode not in {"overlay", "overlay_transparent", "2up"}:
-        raise ValueError("mode inválido (usa 'overlay', 'overlay_transparent' o '2up')")
+        raise ValueError("Invalid mode (use 'overlay', 'overlay_transparent' or '2up')")
 
     if mode == "overlay":
         writer = PdfWriter()
@@ -91,7 +91,7 @@ def two_up(
             _copy_boxes(out, p1)
             out.merge_page(p1, over=True)
             if p2 is not None:
-                # Superpone p2 encima de p1, sin escalar ni mover.
+                # Overlay p2 over p1, without scaling or moving.
                 out.merge_page(p2, over=True)
             writer.add_page(out)
             i += 2
@@ -102,34 +102,34 @@ def two_up(
         return 0
 
     if mode == "overlay_transparent":
-        # Renderiza la página 2 como imagen y convierte el blanco a transparente,
-        # para que el contenido de la página 1 se vea debajo sin cambiar el tamaño.
+        # Render page 2 as image and turn white into transparency so page 1
+        # remains visible underneath without changing page size.
         import io
 
         try:
             import fitz  # PyMuPDF
         except Exception as exc:  # pragma: no cover
-            raise RuntimeError(f"Falta PyMuPDF (fitz): {exc}")
+            raise RuntimeError(f"Missing PyMuPDF (fitz): {exc}")
 
         try:
             from PIL import Image
         except Exception as exc:  # pragma: no cover
-            raise RuntimeError(f"Falta Pillow (PIL): {exc}")
+            raise RuntimeError(f"Missing Pillow (PIL): {exc}")
 
         if dpi <= 0:
-            raise ValueError("--dpi debe ser > 0")
+            raise ValueError("--dpi must be > 0")
         if not (0 <= white_threshold <= 255):
-            raise ValueError("--white-threshold debe estar entre 0 y 255")
+            raise ValueError("--white-threshold must be between 0 and 255")
         if softness < 0:
-            raise ValueError("--softness debe ser >= 0")
+            raise ValueError("--softness must be >= 0")
 
         src = fitz.open(str(input_pdf))
         out = fitz.open()
 
         def to_rgba_with_alpha(pix: "fitz.Pixmap") -> bytes:
             im = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
-            # Whiteness heuristic: si los 3 canales >= threshold => transparente.
-            # (sin numpy; hacemos una pasada por bytes)
+            # Whiteness heuristic: if all 3 channels >= threshold => transparent.
+            # (no numpy; single pass over bytes)
             rgb = im.tobytes()
             alpha = bytearray(len(rgb) // 3)
             t0 = white_threshold
@@ -194,7 +194,7 @@ def two_up(
         max_h = max(max_h, h)
 
     if layout not in {"h", "v"}:
-        raise ValueError("layout inválido (usa 'h' o 'v')")
+        raise ValueError("Invalid layout (use 'h' or 'v')")
 
     writer = PdfWriter()
     if keep_metadata:
@@ -226,7 +226,7 @@ def two_up(
             if p2 is not None:
                 place(p2, out, slot_x=slot_w, slot_y=0.0)
         else:
-            # Vertical: primera página arriba, segunda abajo
+            # Vertical: first page on top, second below
             place(p1, out, slot_x=0.0, slot_y=slot_h)
             if p2 is not None:
                 place(p2, out, slot_x=0.0, slot_y=0.0)
@@ -243,56 +243,56 @@ def two_up(
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
-            "Convierte 2 páginas en 1.\n"
-            "- mode=overlay: superpone página 2 sobre la 1 (sin cambiar tamaño).\n"
-            "- mode=overlay_transparent: como overlay, pero el blanco de la página 2 se vuelve transparente.\n"
-            "- mode=2up: pone 2 páginas en una hoja (puede escalar para que quepan).\n\n"
-            "Ejemplos:\n"
+            "Convert 2 pages into 1.\n"
+            "- mode=overlay: overlays page 2 over page 1 (no size change).\n"
+            "- mode=overlay_transparent: like overlay, but white on page 2 becomes transparent.\n"
+            "- mode=2up: puts 2 pages on one sheet (can scale to fit).\n\n"
+            "Examples:\n"
             "  python scripts/two_up_pdf.py input.pdf -o output.pdf\n"
             "  python scripts/two_up_pdf.py input.pdf -o output.pdf --mode overlay_transparent\n"
             "  python scripts/two_up_pdf.py input.pdf -o output.pdf --mode 2up --layout v\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
-    p.add_argument("input", help="PDF de entrada")
-    p.add_argument("-o", "--output", required=True, help="PDF de salida")
+    p.add_argument("input", help="Input PDF")
+    p.add_argument("-o", "--output", required=True, help="Output PDF")
     p.add_argument(
         "--mode",
         choices=["overlay", "overlay_transparent", "2up"],
         default="overlay",
-        help="overlay=superponer (sin escalar), 2up=2 páginas en una hoja",
+        help="overlay=stack (no scaling), 2up=2 pages on one sheet",
     )
     p.add_argument(
         "--layout",
         choices=["h", "v"],
         default="h",
-        help="Solo para mode=2up: h=horizontal (lado a lado), v=vertical",
+        help="Only for mode=2up: h=horizontal (side by side), v=vertical",
     )
     p.add_argument(
         "--dpi",
         type=int,
         default=200,
-        help="Solo para mode=overlay_transparent: DPI de render de la página 2 (más alto = mejor, más pesado)",
+        help="Only for mode=overlay_transparent: page 2 render DPI (higher = better, heavier)",
     )
     p.add_argument(
         "--white-threshold",
         type=int,
         default=245,
-        help="Solo para mode=overlay_transparent: >= este valor se considera blanco (0-255)",
+        help="Only for mode=overlay_transparent: >= this value is treated as white (0-255)",
     )
     p.add_argument(
         "--softness",
         type=int,
         default=10,
-        help="Solo para mode=overlay_transparent: rango suave para alpha (0=hard keying)",
+        help="Only for mode=overlay_transparent: smooth alpha range (0=hard keying)",
     )
-    p.add_argument("--overwrite", action="store_true", help="Sobrescribe el output si existe")
-    p.add_argument("--password", help="Password si el PDF está encriptado")
-    p.add_argument("--no-metadata", action="store_true", help="No copia metadata del PDF original")
+    p.add_argument("--overwrite", action="store_true", help="Overwrite output if it exists")
+    p.add_argument("--password", help="Password if the PDF is encrypted")
+    p.add_argument("--no-metadata", action="store_true", help="Do not copy original PDF metadata")
     p.add_argument(
         "--drop-last",
         action="store_true",
-        help="Si hay páginas impares, elimina la última en vez de dejar el hueco",
+        help="If there is an odd page count, drop the last page instead of leaving a blank slot",
     )
     return p.parse_args(argv)
 

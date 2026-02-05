@@ -1,6 +1,6 @@
 {
   "name": "region-capture",
-  "description": "Captura interactiva de elementos UI (templates) para automatización de escritorio.",
+  "description": "Interactive capture of UI elements (templates) for desktop automation.",
   "version": "1.0.0",
   "entrypoint": "region_capture.py",
   "outputs": ["text/plain"]

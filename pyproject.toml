@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "belanova"
 version = "0.1.0"
-description = "Asistente de voz con ASR, OpenRouter, MCP y TTS."
+description = "Voice assistant with ASR, OpenRouter, MCP, and TTS."
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [

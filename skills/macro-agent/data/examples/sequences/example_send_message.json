@@ -1,7 +1,7 @@
 {
   "name": "example_send_message",
   "display_name": "Example Send Message",
-  "description": "Secuencia de ejemplo para escribir y enviar un mensaje",
+  "description": "Example sequence for typing and sending a message",
   "created": "2026-02-05T00:00:00",
   "actions": [
     {
@@ -26,7 +26,7 @@
     },
     {
       "type": "write",
-      "text": "Hola, este es un mensaje de ejemplo."
+      "text": "Hello, this is an example message."
     },
     {
       "type": "click-on",

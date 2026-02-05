@@ -81,7 +81,7 @@ class KokoroTTS:
             if all(k in name for k in keywords):
                 print(f"[tts] auto-select output device {idx}: {dev.get('name')}")
                 return idx
-        print("[tts] no se encontró dispositivo coincidente; usando default")
+        print("[tts] no matching device found; using default")
         return None
 
     def speak(self, text: str, return_audio: bool = False):
@@ -91,7 +91,7 @@ class KokoroTTS:
         chunks = []
         for _id, _token, audio in self._pipe(text, voice=self.config.voice):
             if self._stop_flag:
-                print("[tts] stop_flag activo, cortando habla")
+                print("[tts] stop_flag active, interrupting speech")
                 break
             if isinstance(audio, torch.Tensor):
                 audio = audio.detach().cpu().numpy()
@@ -112,7 +112,7 @@ class KokoroTTS:
                 # +3 dB ≈ *1.414
                 audio = audio * 1.414
             else:
-                print(f"[tts] audio tipo inesperado: {type(audio)}")
+                print(f"[tts] unexpected audio type: {type(audio)}")
                 continue
             samplerate = self.config.sample_rate
             try:
@@ -123,17 +123,17 @@ class KokoroTTS:
                     audio = self._resample(audio, samplerate, device_rate)
                     samplerate = device_rate
             except Exception as exc:
-                print(f"[tts] warn: no pude leer samplerate del dispositivo ({exc})")
+                print(f"[tts] warn: could not read device samplerate ({exc})")
 
             try:
                 sd.check_output_settings(device=sd.default.device[1], samplerate=samplerate, channels=1)
             except Exception as exc:
-                print(f"[tts] error: salida no soporta {samplerate} Hz ({exc})")
+                print(f"[tts] error: output does not support {samplerate} Hz ({exc})")
 
             if not return_audio and not self._stop_flag:
                 self._play_audio(audio, samplerate)
         if not chunks:
-            print("[tts] no se generó audio en la tubería")
+            print("[tts] no audio generated in pipeline")
             return None
         merged = np.concatenate(chunks)
         return merged if return_audio else None
@@ -143,7 +143,7 @@ class KokoroTTS:
         print(f"[tts] playback={playback}")
         if "sd" in playback:
             try:
-                print("[tts] usando sounddevice...")
+                print("[tts] using sounddevice...")
                 if self._output_device is None:
                     sd.play(audio, samplerate=samplerate)
                 else:
@@ -156,7 +156,7 @@ class KokoroTTS:
                 wav_path = Path("/tmp/kokoro_last.wav")
                 import soundfile as sf
                 sf.write(wav_path, audio, samplerate)
-                print(f"[tts] usando aplay: {wav_path}")
+                print(f"[tts] using aplay: {wav_path}")
                 self._aplay_proc = subprocess.Popen(
                     ["aplay", str(wav_path)],
                     stdout=subprocess.PIPE,
@@ -200,13 +200,13 @@ class KokoroTTS:
             try:
                 return pyrb.time_stretch(audio.astype(np.float32), self.config.sample_rate, speed)
             except Exception as exc:
-                print(f"[tts] warn: rubberband fallo ({exc}), probando librosa")
+                print(f"[tts] warn: rubberband failed ({exc}), trying librosa")
         # Time-stretch (keeps pitch) using librosa if available.
         if self.config.time_stretch and librosa is not None:
             try:
                 return librosa.effects.time_stretch(audio.astype(np.float32), rate=speed)
             except Exception as exc:
-                print(f"[tts] warn: time_stretch fallo ({exc}), usando resample simple")
+                print(f"[tts] warn: time_stretch failed ({exc}), using simple resample")
         # Fallback: resample (changes pitch).
         src_len = audio.size
         dst_len = max(1, int(src_len / speed))

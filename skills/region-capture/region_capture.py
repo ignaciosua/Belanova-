@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-Herramienta para capturar regiones alrededor del mouse con mapa para IA.
+Tool to capture regions around the mouse and build an AI screen map.
 
-Controles:
-  + / =     : Aumentar tamaño general (+1px)
-  -         : Reducir tamaño general (-1px)
-  x / X     : Aumentar/Reducir ancho (+/-1px)
-  y / Y     : Aumentar/Reducir alto (+/-1px)
-  f         : Modo FREEZE - congela pantalla, mueve el borde, click captura
-  c / Space : Captura directa (sin freeze)
-  r         : Resetear tamaño (200x200)
-  q / ESC   : Salir
+Controls:
+  + / =     : Increase overall size (+1px)
+  -         : Decrease overall size (-1px)
+  x / X     : Increase/Decrease width (+/-1px)
+  y / Y     : Increase/Decrease height (+/-1px)
+  f         : FREEZE mode - freeze screen, move border, click to capture
+  c / Space : Direct capture (without freeze)
+  r         : Reset size (200x200)
+  q / ESC   : Exit
 
-Formato archivo: {nombre}_{x}_{y}.png
-Elementos: elements.json (formato JSON para agentes IA)
+Filename format: {name}_{x}_{y}.png
+Elements: elements.json (JSON format for AI agents)
 """
 import sys
 import os
@@ -57,13 +57,13 @@ MIN_SIZE = 10
 MAX_SIZE = 1000
 SIZE_STEP = 1
 
-# Parsear argumentos antes de definir rutas
+# Parse arguments before defining paths
 import argparse
-parser = argparse.ArgumentParser(description='Captura regiones de pantalla')
-parser.add_argument('--data-dir', help='Directorio para guardar capturas y mapa')
+parser = argparse.ArgumentParser(description='Capture screen regions')
+parser.add_argument('--data-dir', help='Directory to store captures and map')
 _args, _ = parser.parse_known_args()
 
-# Por defecto usar data/local del skill; --data-dir permite override.
+# By default use skill data/local; --data-dir overrides it.
 if _args.data_dir:
     DATA_DIR = os.path.abspath(os.path.expanduser(_args.data_dir))
     CAPTURES_DIR = os.path.join(DATA_DIR, 'captures')
@@ -77,21 +77,21 @@ else:
     ELEMENTS_FILE = str(DEFAULT_ELEMENTS_FILE)
 
 def sanitize_filename(name):
-    """Convierte un nombre a formato válido para archivo."""
-    # Reemplazar espacios con guiones bajos
+    """Converts a name to a valid filename format."""
+    # Replace spaces with underscores
     name = name.strip().replace(' ', '_')
-    # Remover caracteres especiales
+    # Remove special characters
     name = re.sub(r'[^\w\-]', '', name)
-    # Limitar longitud
-    return name[:50] if name else 'captura'
+    # Limit length
+    return name[:50] if name else 'capture'
 
 
 # ============================================
-# FUNCIONES PARA ELEMENTS.JSON
+# FUNCTIONS FOR ELEMENTS.JSON
 # ============================================
 
 def load_elements() -> dict:
-    """Carga elementos desde JSON."""
+    """Loads elements from JSON."""
     if not os.path.exists(ELEMENTS_FILE):
         return {}
     with open(ELEMENTS_FILE, 'r', encoding='utf-8') as f:
@@ -99,28 +99,28 @@ def load_elements() -> dict:
 
 
 def save_elements(elements: dict):
-    """Guarda elementos en JSON."""
+    """Saves elements to JSON."""
     with open(ELEMENTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(elements, f, indent=2, ensure_ascii=False)
 
 
 def get_element_names() -> list:
-    """Retorna lista de nombres de elementos existentes."""
+    """Returns list of existing element names."""
     elements = load_elements()
     return list(elements.keys())
 
 
 def add_image_to_element(element_name: str, image_file: str, description: str = "", tags: list = None):
-    """Agrega una imagen a un elemento existente o crea uno nuevo."""
+    """Adds an image to an existing element or creates a new one."""
     elements = load_elements()
     name_key = element_name.lower().replace(' ', '_')
     
     if name_key in elements:
-        # Agregar imagen a elemento existente
+        # Add image to existing element
         if image_file not in elements[name_key]['images']:
             elements[name_key]['images'].append(image_file)
     else:
-        # Crear nuevo elemento
+        # Create new element
         elements[name_key] = {
             "name": name_key,
             "description": description,
@@ -133,59 +133,59 @@ def add_image_to_element(element_name: str, image_file: str, description: str = 
 
 
 def count_elements() -> int:
-    """Cuenta elementos en JSON."""
+    """Counts elements in JSON."""
     return len(load_elements())
 
 
 def ask_capture_info():
-    """Pide nombre y descripción al usuario. Permite agregar a elemento existente."""
+    """Asks for name and description. Allows adding to an existing element."""
     result = {'name': None, 'description': None, 'tags': None, 'is_new': True}
     
     root = tk.Tk()
-    root.title("Información de la captura")
+    root.title("Capture information")
     root.attributes('-topmost', True)
     root.geometry("550x400")
     root.configure(bg='#2d2d2d')
     
-    # Centrar ventana
+    # Center window
     root.update_idletasks()
     x = (root.winfo_screenwidth() // 2) - 275
     y = (root.winfo_screenheight() // 2) - 200
     root.geometry(f"+{x}+{y}")
     
-    # Obtener elementos existentes
+    # Load existing elements
     existing_elements = get_element_names()
     
-    # === Selector: Nuevo o Existente ===
+    # === Selector: New or Existing ===
     mode_var = tk.StringVar(value="new")
     
     mode_frame = tk.Frame(root, bg='#2d2d2d')
     mode_frame.pack(pady=(15, 5))
     
     rb_new = tk.Radiobutton(
-        mode_frame, text="Crear nuevo elemento", variable=mode_var, value="new",
+        mode_frame, text="Create new element", variable=mode_var, value="new",
         bg='#2d2d2d', fg='white', selectcolor='#444444', font=('Sans', 10),
         activebackground='#2d2d2d', activeforeground='white'
     )
     rb_new.pack(side=tk.LEFT, padx=10)
     
     rb_existing = tk.Radiobutton(
-        mode_frame, text="Agregar a existente", variable=mode_var, value="existing",
+        mode_frame, text="Add to existing", variable=mode_var, value="existing",
         bg='#2d2d2d', fg='white', selectcolor='#444444', font=('Sans', 10),
         activebackground='#2d2d2d', activeforeground='white'
     )
     rb_existing.pack(side=tk.LEFT, padx=10)
     
-    # === Frame para elemento existente ===
+    # === Frame for existing element ===
     existing_frame = tk.Frame(root, bg='#2d2d2d')
     
     lbl_existing = tk.Label(
-        existing_frame, text="Seleccionar elemento:",
+        existing_frame, text="Select element:",
         bg='#2d2d2d', fg='white', font=('Sans', 11)
     )
     lbl_existing.pack(pady=(5, 5))
     
-    # Listbox con elementos
+    # Element listbox
     listbox_frame = tk.Frame(existing_frame, bg='#2d2d2d')
     listbox_frame.pack(pady=5)
     
@@ -202,18 +202,18 @@ def ask_capture_info():
     for elem in existing_elements:
         listbox.insert(tk.END, elem)
     
-    # === Frame para nuevo elemento ===
+    # === Frame for new element ===
     new_frame = tk.Frame(root, bg='#2d2d2d')
     
-    # Nombre
+    # Name
     lbl_name = tk.Label(
-        new_frame, text="Nombre (será el nombre del archivo):",
+        new_frame, text="Name (this becomes the filename):",
         bg='#2d2d2d', fg='white', font=('Sans', 11)
     )
     lbl_name.pack(pady=(5, 5))
     
     hint_name = tk.Label(
-        new_frame, text="(ej: btn_guardar, icono_chrome, campo_busqueda)",
+        new_frame, text="(e.g. btn_save, chrome_icon, search_field)",
         bg='#2d2d2d', fg='#888888', font=('Sans', 9)
     )
     hint_name.pack()
@@ -221,9 +221,9 @@ def ask_capture_info():
     entry_name = tk.Entry(new_frame, font=('Sans', 12), width=45)
     entry_name.pack(pady=5)
     
-    # Descripción
+    # Description
     lbl_desc = tk.Label(
-        new_frame, text="Descripción (para que la IA entienda qué es):",
+        new_frame, text="Description (so the AI understands what it is):",
         bg='#2d2d2d', fg='white', font=('Sans', 11)
     )
     lbl_desc.pack(pady=(10, 5))
@@ -233,7 +233,7 @@ def ask_capture_info():
     
     # Tags
     lbl_tags = tk.Label(
-        new_frame, text="Tags (separados por coma, para búsqueda):",
+        new_frame, text="Tags (comma-separated, for search):",
         bg='#2d2d2d', fg='white', font=('Sans', 11)
     )
     lbl_tags.pack(pady=(10, 5))
@@ -248,7 +248,7 @@ def ask_capture_info():
     entry_tags.pack(pady=5)
     
     def update_mode(*args):
-        """Muestra/oculta frames según modo seleccionado."""
+        """Shows/hides frames based on selected mode."""
         if mode_var.get() == "new":
             existing_frame.pack_forget()
             new_frame.pack(pady=10)
@@ -259,7 +259,7 @@ def ask_capture_info():
             listbox.focus_set()
     
     mode_var.trace('w', update_mode)
-    new_frame.pack(pady=10)  # Mostrar nuevo por defecto
+    new_frame.pack(pady=10)  # Show "new" mode by default
     entry_name.focus_set()
     
     def on_submit(event=None):
@@ -275,23 +275,23 @@ def ask_capture_info():
                 result['name'] = listbox.get(selection[0])
                 result['is_new'] = False
             else:
-                return  # No hay selección
+                return  # No selection
         root.destroy()
         
     def on_cancel(event=None):
         root.destroy()
     
-    # Botones
+    # Buttons
     btn_frame = tk.Frame(root, bg='#2d2d2d')
     btn_frame.pack(pady=15, side=tk.BOTTOM)
     
-    btn_ok = tk.Button(btn_frame, text="Guardar", command=on_submit, width=12)
+    btn_ok = tk.Button(btn_frame, text="Save", command=on_submit, width=12)
     btn_ok.pack(side=tk.LEFT, padx=5)
     
-    btn_cancel = tk.Button(btn_frame, text="Cancelar", command=on_cancel, width=12)
+    btn_cancel = tk.Button(btn_frame, text="Cancel", command=on_cancel, width=12)
     btn_cancel.pack(side=tk.LEFT, padx=5)
     
-    # Bindings
+    # Key bindings
     entry_name.bind('<Return>', lambda e: entry_desc.focus_set())
     entry_desc.bind('<Return>', lambda e: entry_tags.focus_set())
     entry_tags.bind('<Return>', on_submit)
@@ -304,7 +304,7 @@ def ask_capture_info():
 
 
 class FreezeCapture:
-    """Congela la pantalla y permite seleccionar región con borde visual."""
+    """Freezes the screen and lets the user select a region with a visual border."""
     
     def __init__(self, width, height, on_done):
         self.width = width
@@ -315,28 +315,28 @@ class FreezeCapture:
         self.last_y = 0
         
     def run(self):
-        """Ejecuta el modo freeze."""
-        # Tomar screenshot
+        """Runs freeze mode."""
+        # Take screenshot
         screenshot = ImageGrab.grab()
         
-        # Crear ventana
+        # Create window
         root = tk.Tk()
         root.attributes('-fullscreen', True)
         root.attributes('-topmost', True)
         root.config(cursor="crosshair")
         
-        # Canvas con el screenshot
+        # Canvas with screenshot
         photo = ImageTk.PhotoImage(screenshot)
         canvas = tk.Canvas(root, highlightthickness=0)
         canvas.pack(fill=tk.BOTH, expand=True)
         canvas.create_image(0, 0, anchor=tk.NW, image=photo)
         
-        # Elementos del borde
+        # Border elements
         rect_id = [None]
         cross_h = [None]
         cross_v = [None]
         
-        # Info bar - ahora movible
+        # Info bar - movable
         info_x = [10]
         info_y = [10]
         dragging_info = [False]
@@ -344,13 +344,13 @@ class FreezeCapture:
         
         info = tk.Label(
             root, 
-            text=f"Región: {self.width}x{self.height} | +/-=Tamaño | x/X y/Y=Ejes | Click=Capturar | ESC=Cancelar",
+            text=f"Region: {self.width}x{self.height} | +/-=Size | x/X y/Y=Axes | Click=Capture | ESC=Cancel",
             bg='#333333', fg='white', font=('Mono', 11), padx=10, pady=5,
-            cursor="fleur"  # Cursor de mover
+            cursor="fleur"  # Move cursor
         )
         info.place(x=info_x[0], y=info_y[0])
         
-        # Funciones para mover la barra de info
+        # Functions to drag the info bar
         def info_start_drag(event):
             dragging_info[0] = True
             drag_offset[0] = event.x
@@ -367,46 +367,46 @@ class FreezeCapture:
         def info_stop_drag(event):
             dragging_info[0] = False
         
-        # Bindings para mover la barra
+        # Bindings for dragging the info bar
         info.bind('<Button-1>', info_start_drag)
         info.bind('<B1-Motion>', info_drag)
         info.bind('<ButtonRelease-1>', info_stop_drag)
         
-        # Estado
+        # State
         captured = [False]
         capture_data = [None, None, None]  # image, x, y
         
         def draw_border(x, y):
-            """Dibuja el borde en la posición dada."""
+            """Draws border at the given position."""
             self.last_x = x
             self.last_y = y
             
             half_w = self.width // 2
             half_h = self.height // 2
             
-            # Borrar anterior
+            # Clear previous
             if rect_id[0]: canvas.delete(rect_id[0])
             if cross_h[0]: canvas.delete(cross_h[0])
             if cross_v[0]: canvas.delete(cross_v[0])
             
-            # Dibujar borde
+            # Draw border
             rect_id[0] = canvas.create_rectangle(
                 x - half_w, y - half_h, 
                 x + half_w, y + half_h,
                 outline='#FF0000', width=2
             )
             
-            # Cruz central
+            # Center cross
             cross_h[0] = canvas.create_line(x-12, y, x+12, y, fill='#FF0000', width=1)
             cross_v[0] = canvas.create_line(x, y-12, x, y+12, fill='#FF0000', width=1)
             
-            info.config(text=f"({x}, {y}) | Región: {self.width}x{self.height} | +/-=Tamaño | x/X y/Y=Ejes | Click=Capturar")
+            info.config(text=f"({x}, {y}) | Region: {self.width}x{self.height} | +/-=Size | x/X y/Y=Axes | Click=Capture")
         
         def on_motion(event):
             draw_border(event.x, event.y)
             
         def on_key(event):
-            """Maneja teclas en modo freeze."""
+            """Handles keys in freeze mode."""
             key = event.char
             keysym = event.keysym
             
@@ -436,7 +436,7 @@ class FreezeCapture:
             half_w = self.width // 2
             half_h = self.height // 2
             
-            # Recortar región del screenshot
+            # Crop region from screenshot
             region = screenshot.crop((x - half_w, y - half_h, x + half_w, y + half_h))
             capture_data[0] = region
             capture_data[1] = x
@@ -451,20 +451,20 @@ class FreezeCapture:
         canvas.bind('<Button-1>', on_click)
         root.bind('<Escape>', on_cancel)
         root.bind('<q>', on_cancel)
-        root.bind('<Key>', on_key)  # Captura todas las teclas
+        root.bind('<Key>', on_key)  # Capture all keys
         
         root.mainloop()
         
-        # Callback con resultado (incluye nuevo tamaño)
+        # Callback with result (includes updated size)
         if captured[0] and self.on_done:
             self.on_done(capture_data[0], capture_data[1], capture_data[2], self.width, self.height)
         elif self.on_done:
-            # Aunque no capture, devuelve el nuevo tamaño
+            # Even if canceled, return updated size
             self.on_done(None, 0, 0, self.width, self.height)
 
 
 class RegionCapture:
-    """Capturador de regiones."""
+    """Region capture app."""
     
     def __init__(self):
         self.width = DEFAULT_WIDTH
@@ -484,20 +484,20 @@ class RegionCapture:
         self.update_thread.start()
         
     def update_loop(self):
-        """Muestra info en terminal."""
+        """Shows live info in terminal."""
         while self.running:
             if not self.freeze_active:
                 x, y = pyautogui.position()
                 print(
                     f"\r  Mouse: ({x:4d}, {y:4d}) | "
-                    f"Región: {self.width}x{self.height} | "
-                    f"Capturas: {self.capture_count}    ",
+                    f"Region: {self.width}x{self.height} | "
+                    f"Captures: {self.capture_count}    ",
                     end='', flush=True
                 )
             time.sleep(0.1)
             
     def on_key(self, key):
-        """Maneja teclas."""
+        """Handles keyboard input."""
         if self.freeze_active:
             return
             
@@ -548,8 +548,8 @@ class RegionCapture:
             pass
             
     def start_freeze(self):
-        """Inicia modo freeze en thread separado."""
-        print("\n🔒 FREEZE - +/-=Tamaño | x/X=Ancho | y/Y=Alto | Click=Capturar | ESC=Cancelar")
+        """Starts freeze mode in a separate thread."""
+        print("\n🔒 FREEZE - +/-=Size | x/X=Width | y/Y=Height | Click=Capture | ESC=Cancel")
         self.freeze_active = True
         
         def run_freeze():
@@ -557,21 +557,21 @@ class RegionCapture:
             freeze.run()
             self.freeze_active = False
             
-        # Ejecutar en thread del main (tkinter lo necesita)
+        # Run in a separate thread (tkinter requirement in this flow)
         threading.Thread(target=run_freeze).start()
         
     def on_freeze_done(self, image, x, y, new_width, new_height):
-        """Callback cuando freeze termina - actualiza tamaño y guarda si hay imagen."""
-        # Actualizar tamaño (por si cambió en freeze)
+        """Called when freeze ends: updates size and stores image if captured."""
+        # Update size (it may have changed in freeze mode)
         self.width = new_width
         self.height = new_height
         
-        # Guardar si hay captura
+        # Save if a capture was made
         if image is not None:
             self.save_capture(image, x, y)
         
     def capture_direct(self):
-        """Captura directa sin freeze."""
+        """Direct capture without freeze mode."""
         x, y = pyautogui.position()
         half_w = self.width // 2
         half_h = self.height // 2
@@ -583,29 +583,29 @@ class RegionCapture:
             print(f"\n✗ Error: {e}")
             
     def save_capture(self, image, x, y):
-        """Guarda la captura y agrega al JSON de elementos."""
+        """Saves capture and updates elements JSON."""
         if image is None:
             return
         
-        # Guardar imagen temporalmente
+        # Save image temporarily
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         temp_filename = f"temp_{timestamp}.png"
         temp_filepath = os.path.join(CAPTURES_DIR, temp_filename)
         image.save(temp_filepath)
         
-        print(f"\n📷 Captura tomada en ({x}, {y})")
-        print("📝 Selecciona elemento o crea uno nuevo...")
+        print(f"\n📷 Capture taken at ({x}, {y})")
+        print("📝 Select an element or create a new one...")
         
-        # Pedir nombre y descripción
+        # Ask for name/description
         name, description, tags, is_new = ask_capture_info()
         
-        # Si canceló, eliminar imagen temporal
+        # If canceled, remove temporary image
         if not name:
             os.remove(temp_filepath)
-            print("✗ Captura cancelada\n")
+            print("✗ Capture canceled\n")
             return
         
-        # Renombrar archivo con el nombre dado
+        # Rename using chosen name
         safe_name = sanitize_filename(name)
         final_filename = f"{safe_name}_{timestamp}.png"
         final_filepath = os.path.join(CAPTURES_DIR, final_filename)
@@ -614,33 +614,33 @@ class RegionCapture:
         
         self.capture_count += 1
         
-        # Agregar al JSON
+        # Add to JSON
         if is_new:
-            # Crear nuevo elemento
+            # Create new element
             add_image_to_element(name, final_filename, description, tags)
-            print(f"✓ #{self.capture_count}: Nuevo elemento '{name}' creado")
+            print(f"✓ #{self.capture_count}: New element '{name}' created")
         else:
-            # Agregar imagen a elemento existente
+            # Add image to existing element
             add_image_to_element(name, final_filename)
-            print(f"✓ #{self.capture_count}: Imagen agregada a '{name}'")
+            print(f"✓ #{self.capture_count}: Image added to '{name}'")
         
         total_elements = count_elements()
-        print(f"✓ Guardado: {final_filename}")
-        print(f"✓ elements.json actualizado ({total_elements} elementos)\n")
+        print(f"✓ Saved: {final_filename}")
+        print(f"✓ elements.json updated ({total_elements} elements)\n")
         
     def quit(self):
-        """Sale."""
+        """Exit."""
         self.running = False
         total_elements = count_elements()
-        print(f"\n\n✓ {self.capture_count} capturas en esta sesión")
-        print(f"  Carpeta: {CAPTURES_DIR}")
-        print(f"✓ elements.json ({total_elements} elementos)")
+        print(f"\n\n✓ {self.capture_count} captures in this session")
+        print(f"  Folder: {CAPTURES_DIR}")
+        print(f"✓ elements.json ({total_elements} elements)")
         print(f"  {ELEMENTS_FILE}\n")
         self.kb_listener.stop()
         os._exit(0)
         
     def run(self):
-        """Ejecuta."""
+        """Run app."""
         try:
             self.kb_listener.join()
         except:
@@ -649,22 +649,22 @@ class RegionCapture:
 
 def main():
     print("=" * 60)
-    print("  REGION CAPTURE + MAPA IA (JSON)")
+    print("  REGION CAPTURE + AI MAP (JSON)")
     print("=" * 60)
-    print("\n  + / -     Tamaño (±1px)")
-    print("  x / X     Ancho (±1px)")
-    print("  y / Y     Alto (±1px)")
-    print("  f         FREEZE (congela pantalla + borde visual)")
-    print("  c/Space   Captura directa")
+    print("\n  + / -     Size (±1px)")
+    print("  x / X     Width (±1px)")
+    print("  y / Y     Height (±1px)")
+    print("  f         FREEZE (freeze screen + visual border)")
+    print("  c/Space   Direct capture")
     print("  r         Reset (200x200)")
-    print("  q/ESC     Salir")
-    print(f"\n  Carpeta: {CAPTURES_DIR}")
-    print(f"  Elementos: {ELEMENTS_FILE}")
+    print("  q/ESC     Exit")
+    print(f"\n  Folder: {CAPTURES_DIR}")
+    print(f"  Elements: {ELEMENTS_FILE}")
     
-    # Mostrar elementos existentes
+    # Show existing elements
     total = count_elements()
     if total > 0:
-        print(f"\n  📍 Elementos registrados: {total}")
+        print(f"\n  📍 Registered elements: {total}")
     
     print("-" * 60 + "\n")
     

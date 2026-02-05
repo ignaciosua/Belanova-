@@ -18,7 +18,7 @@ class AgentConfig:
 class OpenRouterAgent:
     def __init__(self, config: AgentConfig, tools):
         if not config.model:
-            raise RuntimeError("OPENROUTER_MODEL no está configurado")
+            raise RuntimeError("OPENROUTER_MODEL is not configured")
         self.config = config
         self.tools = tools
         self._last_model = config.model
@@ -73,9 +73,9 @@ class OpenRouterAgent:
             system = {
                 "role": "system",
                 "content": (
-                    "Eres un agente que puede usar herramientas para realizar acciones reales. "
-                    "Responde en español. Usa herramientas cuando haga falta. "
-                    "Si usas herramientas, espera sus resultados antes de continuar."
+                    "You are an agent that can use tools to perform real actions. "
+                    "Reply in English. Use tools when needed. "
+                    "If you use tools, wait for results before continuing."
                 ),
             }
             messages = [system, {"role": "user", "content": user_text}]
@@ -105,7 +105,7 @@ class OpenRouterAgent:
                 try:
                     args = json.loads(raw_args) if raw_args else {}
                 except Exception as exc:
-                    err_content = f"Error parseando argumentos para {name}: {exc}"
+                    err_content = f"Error parsing arguments for {name}: {exc}"
                     messages.append(
                         {
                             "role": "tool",
@@ -130,7 +130,7 @@ class OpenRouterAgent:
                     return result.content
 
         self._last_model = last_model
-        return "Me detuve por demasiadas llamadas de herramientas."
+        return "Stopped due to too many tool calls."
 
     def _sanitize_tool_history(self, messages: list[dict[str, Any]]) -> None:
         sanitized: list[dict[str, Any]] = []

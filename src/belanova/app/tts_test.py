@@ -14,7 +14,7 @@ def main() -> int:
                 print(f"  {idx}: {dev.get('name')} (rate={dev.get('default_samplerate')})")
         print("  default:", sd.default.device)
     except Exception as exc:
-        print(f"[test] no pude listar dispositivos: {exc}")
+        print(f"[test] could not list devices: {exc}")
 
     tts = KokoroTTS(
         TTSConfig(
@@ -27,34 +27,34 @@ def main() -> int:
             stretch_engine=settings.tts_stretch_engine,
         )
     )
-    text = "Hola. Esta es una prueba de voz de Kokoro en español."
-    print(f"[test] texto={text!r}")
-    print("[test] generando y reproduciendo audio...")
+    text = "Hello. This is an English Kokoro voice test."
+    print(f"[test] text={text!r}")
+    print("[test] generating and playing audio...")
     audio = tts.speak(text, return_audio=True)
     if audio is None:
-        print("[test] no se generó audio")
+        print("[test] no audio was generated")
         return 1
     try:
         import soundfile as sf
         wav_path = "/tmp/kokoro_test.wav"
         sf.write(wav_path, audio, settings.kokoro_sample_rate)
-        print(f"[test] wav guardado en {wav_path}")
+        print(f"[test] wav saved at {wav_path}")
         try:
             import sounddevice as sd
-            print("[test] reproduciendo wav con sounddevice (default)...")
+            print("[test] playing wav with sounddevice (default)...")
             sd.play(audio, samplerate=settings.kokoro_sample_rate)
             sd.wait()
         except Exception as exc:
-            print(f"[test] error reproduciendo con sounddevice: {exc}")
+            print(f"[test] error playing with sounddevice: {exc}")
         try:
             import subprocess
-            print("[test] reproduciendo wav con aplay...")
+            print("[test] playing wav with aplay...")
             subprocess.run(["aplay", wav_path], check=False)
         except Exception as exc:
-            print(f"[test] error reproduciendo con aplay: {exc}")
+            print(f"[test] error playing with aplay: {exc}")
     except Exception as exc:
-        print(f"[test] no pude guardar/reproducir wav: {exc}")
-    print("[test] listo")
+        print(f"[test] could not save/play wav: {exc}")
+    print("[test] done")
     return 0
 
 

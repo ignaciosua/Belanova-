@@ -1,8 +1,8 @@
 # Macro Agent Data
 
-Este directorio separa datos de ejemplo de datos locales runtime:
+This directory separates safe example data from local runtime data:
 
-- `examples/`: archivos seguros y versionados para mostrar estructura.
-- `local/`: datos generados en ejecución (capturas, secuencias, estado de sonido). Este folder está en `.gitignore` para evitar subir información sensible.
+- `examples/`: safe, versioned files used to show structure.
+- `local/`: runtime-generated data (captures, sequences, sound state). This folder is in `.gitignore` to avoid committing sensitive data.
 
-Si necesitas personalizar elementos o secuencias, hazlo desde el runtime; los cambios quedarán en `data/local/`.
+If you need to customize elements or sequences, do it from runtime; changes will be stored in `data/local/`.

@@ -82,7 +82,7 @@ class OpenAIWhisperASR:
         timeout_s: int = 60,
     ):
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY no configurada para ASR API")
+            raise RuntimeError("OPENAI_API_KEY is not configured for ASR API")
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
         self.model = model
@@ -97,8 +97,6 @@ class OpenAIWhisperASR:
             return None
         aliases = {
             "spanish": "es",
-            "espanol": "es",
-            "español": "es",
             "english": "en",
         }
         if lang in aliases:
@@ -132,7 +130,7 @@ class OpenAIWhisperASR:
                 timeout=self.timeout_s,
             )
         except Exception as exc:
-            raise RuntimeError(f"ASR API error de conexión: {exc}") from exc
+            raise RuntimeError(f"ASR API connection error: {exc}") from exc
 
         if not response.ok:
             snippet = response.text[:300].replace("\n", " ").strip()
@@ -150,7 +148,7 @@ class OpenAIWhisperASR:
 def create_asr(settings: Any):
     provider = (getattr(settings, "whisper_provider", "auto") or "auto").strip().lower()
     if provider not in {"auto", "local", "openai"}:
-        print(f"[asr] whisper_provider desconocido ({provider}), usando auto")
+        print(f"[asr] unknown whisper_provider ({provider}), using auto")
         provider = "auto"
 
     has_openai_key = bool(getattr(settings, "openai_api_key", "").strip())
@@ -166,6 +164,6 @@ def create_asr(settings: Any):
         )
 
     if use_openai and not has_openai_key:
-        print("[asr] OPENAI_API_KEY no configurada; fallback a modelo local")
+        print("[asr] OPENAI_API_KEY not configured; falling back to local model")
 
     return WhisperTurboASR(settings.whisper_model_id, language=settings.whisper_language)

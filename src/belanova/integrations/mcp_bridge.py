@@ -30,14 +30,14 @@ def _load_skill_bridge_config(config_path: Path) -> dict[str, Any]:
     data = json.loads(config_path.read_text(encoding="utf-8"))
     servers = data.get("servers", {})
     if "skill-bridge" not in servers:
-        raise RuntimeError("No se encontró 'skill-bridge' en mcp.json")
+        raise RuntimeError("'skill-bridge' was not found in mcp.json")
     return servers["skill-bridge"]
 
 
 async def _call_skill_bridge(tool: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
     config_path = Path(os.getenv("MCP_CONFIG_PATH", str(DEFAULT_MCP_CONFIG)))
     if not config_path.exists():
-        raise RuntimeError(f"No existe mcp.json en {config_path}")
+        raise RuntimeError(f"mcp.json does not exist at {config_path}")
 
     cfg = _load_skill_bridge_config(config_path)
     command = cfg.get("command")
@@ -52,7 +52,7 @@ async def _call_skill_bridge(tool: str, arguments: dict[str, Any] | None = None)
             merged_env[key] = os.environ[key]
 
     if not command:
-        raise RuntimeError("Skill bridge sin 'command' en mcp.json")
+        raise RuntimeError("Skill bridge has no 'command' in mcp.json")
 
     server = StdioServerParameters(command=command, args=args, env=merged_env)
 
@@ -68,13 +68,13 @@ async def _call_skill_bridge(tool: str, arguments: dict[str, Any] | None = None)
                         with anyio.fail_after(timeout_s):
                             await session.initialize()
                     except TimeoutError:
-                        return {"isError": True, "content": "Timeout inicializando MCP (skill-bridge)."}
+                        return {"isError": True, "content": "Timeout while initializing MCP (skill-bridge)."}
                     print(f"[mcp] call tool={tool} args={arguments or {}} timeout={timeout_s}s")
                     try:
                         with anyio.fail_after(timeout_s):
                             result = await session.call_tool(tool, arguments or {})
                     except TimeoutError:
-                        return {"isError": True, "content": f"Timeout ejecutando tool MCP: {tool}"}
+                        return {"isError": True, "content": f"Timeout while executing MCP tool: {tool}"}
                     print(f"[mcp] done tool={tool} isError={result.isError}")
         except Exception as exc:
             errlog.flush()
@@ -93,7 +93,7 @@ async def _call_skill_bridge(tool: str, arguments: dict[str, Any] | None = None)
             if getattr(item, "type", "") == "text":
                 content.append(item.text)
             elif getattr(item, "type", "") == "image":
-                content.append(f"[imagen {item.mimeType} {len(item.data)} bytes]")
+                content.append(f"[image {item.mimeType} {len(item.data)} bytes]")
             else:
                 content.append(str(item))
         return {
@@ -125,10 +125,10 @@ def _fallback_direct(tool: str, arguments: dict[str, Any], exc: Exception) -> di
                 script_arg = item
                 break
         if script_arg is None:
-            return {"isError": True, "content": "Fallback falló: no se encontró script .py en args"}
+            return {"isError": True, "content": "Fallback failed: .py script was not found in args"}
         script_path = Path(script_arg)
         if not script_path.exists():
-            return {"isError": True, "content": f"Fallback falló: no existe {script_path}"}
+            return {"isError": True, "content": f"Fallback failed: {script_path} does not exist"}
 
         spec = importlib.util.spec_from_file_location("skill_bridge_local", script_path)
         mod = importlib.util.module_from_spec(spec)
@@ -161,19 +161,19 @@ def _fallback_direct(tool: str, arguments: dict[str, Any], exc: Exception) -> di
             name = arguments.get("skill_name", "")
             skills = mod.get_skills()
             if name not in skills:
-                return {"isError": True, "content": f"Skill '{name}' no encontrado."}
+                return {"isError": True, "content": f"Skill '{name}' not found."}
             skill_path = Path(skills[name].get("path", ""))
             skill_md = skill_path / "SKILL.md"
             if skill_md.exists():
                 return {"isError": False, "content": skill_md.read_text()}
-            return {"isError": False, "content": "SKILL.md no encontrado."}
+            return {"isError": False, "content": "SKILL.md not found."}
 
         if tool == "run_skill":
             name = arguments.get("skill_name", "")
             args = arguments.get("args", [])
             skills = mod.get_skills()
             if name not in skills:
-                return {"isError": True, "content": f"Skill '{name}' no encontrado."}
+                return {"isError": True, "content": f"Skill '{name}' not found."}
             result = anyio.run(mod.execute_skill, skills[name], args)
             output = mod.detect_and_parse_output(result.data if hasattr(result, "data") else result)
             return {"isError": False, "content": str(output.data)}
@@ -181,8 +181,8 @@ def _fallback_direct(tool: str, arguments: dict[str, Any], exc: Exception) -> di
         if tool == "refresh_skills":
             mod.clear_skills_cache()
             mod.get_skills()
-            return {"isError": False, "content": "Skills refrescados (fallback)."}
+            return {"isError": False, "content": "Skills refreshed (fallback)."}
 
-        return {"isError": True, "content": f"Tool desconocida: {tool}"}
+        return {"isError": True, "content": f"Unknown tool: {tool}"}
     except Exception as e:
         return {"isError": True, "content": f"Fallback error: {e}. MCP error: {exc}"}

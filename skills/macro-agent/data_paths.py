@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Centraliza rutas de datos del skill macro-agent.
+Centralizes data paths for the macro-agent skill.
 
-Estructura:
-- data/examples/: contenido versionado y seguro para el repositorio.
-- data/local/: datos runtime del usuario (capturas, secuencias, estados).
+Structure:
+- data/examples/: versioned content safe for the repository.
+- data/local/: user runtime data (captures, sequences, states).
 """
 
 from __future__ import annotations
@@ -34,7 +34,7 @@ def _copy_if_missing(src: Path, dst: Path) -> None:
 
 
 def ensure_local_data() -> None:
-    """Inicializa data/local con archivos de ejemplo cuando falten."""
+    """Initializes data/local with example files when missing."""
     CAPTURES_DIR.mkdir(parents=True, exist_ok=True)
     SEQUENCES_DIR.mkdir(parents=True, exist_ok=True)
 

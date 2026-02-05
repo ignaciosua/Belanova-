@@ -44,7 +44,7 @@ def ensure_env_file() -> None:
         return
     if sample.exists():
         shutil.copyfile(sample, env_path)
-        print(f"[ok] .env creado desde {sample.name}")
+        print(f"[ok] .env created from {sample.name}")
 
 
 def _python_version(python_bin: Path | str) -> tuple[int, int]:
@@ -95,12 +95,12 @@ def select_base_python(preferred_python: str | None = None) -> Path:
             continue
         checked.append(f"{py} ({version[0]}.{version[1]})")
         if _is_supported_python(version):
-            print(f"[ok] python base seleccionado: {py} ({version[0]}.{version[1]})")
+            print(f"[ok] selected base python: {py} ({version[0]}.{version[1]})")
             return py
-    joined = ", ".join(checked) if checked else "ninguno"
+    joined = ", ".join(checked) if checked else "none"
     raise RuntimeError(
-        "No se encontró un Python compatible (requiere >=3.10 y <3.13). "
-        f"Candidatos evaluados: {joined}"
+        "No compatible Python was found (requires >=3.10 and <3.13). "
+        f"Checked candidates: {joined}"
     )
 
 
@@ -113,8 +113,8 @@ def create_or_get_python(venv_dir: Path, skip_venv: bool, *, base_python: Path) 
             current_version = _python_version(py)
             if not _is_supported_python(current_version):
                 print(
-                    "[warn] El venv actual usa Python incompatible "
-                    f"({current_version[0]}.{current_version[1]}). Recreando..."
+                    "[warn] Current venv uses an incompatible Python "
+                    f"({current_version[0]}.{current_version[1]}). Recreating..."
                 )
                 shutil.rmtree(venv_dir, ignore_errors=True)
         except Exception:
@@ -123,7 +123,7 @@ def create_or_get_python(venv_dir: Path, skip_venv: bool, *, base_python: Path) 
         run([str(base_python), "-m", "venv", str(venv_dir)], check=True)
     py = venv_dir / "bin/python"
     if not py.exists():
-        raise RuntimeError(f"No se encontró python del venv en {py}")
+        raise RuntimeError(f"Virtualenv python not found at {py}")
     return py
 
 
@@ -146,7 +146,7 @@ def install_python_deps(py: Path, *, upgrade_pip: bool, torch_mode: str) -> None
     if upgrade_pip:
         result = run([str(py), "-m", "pip", "install", "--upgrade", "pip"], check=False)
         if result.returncode != 0:
-            print("[warn] No se pudo actualizar pip; continúo con instalación de dependencias.")
+            print("[warn] Could not upgrade pip; continuing with dependency installation.")
 
     lines = _read_requirements_lines(req)
     accelerate_reqs = [ln.strip() for ln in lines if _is_accelerate_req(ln)]
@@ -168,7 +168,7 @@ def install_python_deps(py: Path, *, upgrade_pip: bool, torch_mode: str) -> None
     elif torch_mode == "default":
         run([str(py), "-m", "pip", "install", "torch"], check=True)
     else:
-        raise RuntimeError(f"Modo torch inválido: {torch_mode}")
+        raise RuntimeError(f"Invalid torch mode: {torch_mode}")
 
     with tempfile.NamedTemporaryFile("w", encoding="utf-8", suffix=".txt", delete=False) as tmp:
         tmp.write("\n".join(base_lines).strip() + "\n")
@@ -197,17 +197,17 @@ def install_system_deps() -> None:
     apt = shutil.which("apt-get")
     sudo = shutil.which("sudo")
     if not apt:
-        print("[warn] apt-get no está disponible; omitiendo paquetes del sistema.")
+        print("[warn] apt-get is not available; skipping system packages.")
         return
     prefix: list[str] = []
     if sudo and os.geteuid() != 0:
-        # En terminal interactiva, pedir password de sudo para no omitir deps críticas.
+        # In interactive terminals, allow sudo password prompt to avoid skipping critical deps.
         if sys.stdin.isatty():
             prefix = [sudo]
         else:
             probe = subprocess.run([sudo, "-n", "true"], capture_output=True, text=True, check=False)
             if probe.returncode != 0:
-                print("[warn] sudo requiere contraseña interactiva; omitiendo paquetes del sistema en este modo.")
+                print("[warn] sudo requires an interactive password; skipping system packages in this mode.")
                 return
             prefix = [sudo]
     run(prefix + [apt, "update"], check=False)
@@ -229,7 +229,7 @@ def install_skill_reqs(py: Path, skills_dir: Path) -> None:
 def sync_workspace_skills(py: Path) -> None:
     script = PROJECT_ROOT / "scripts/sync_workspace_skills.py"
     if not script.exists():
-        print(f"[warn] No existe {script}; omitiendo sync de skills")
+        print(f"[warn] {script} does not exist; skipping skills sync")
         return
     run([str(py), str(script), "--overwrite"], check=True)
 
@@ -275,17 +275,17 @@ def configure_mcp_json(
 
     data["servers"] = servers
     mcp_config.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"[ok] mcp.json actualizado: {mcp_config}")
+    print(f"[ok] mcp.json updated: {mcp_config}")
 
 
 def install_skill_bridge_files(skill_bridge_dir: Path) -> None:
     if not LOCAL_SKILL_BRIDGE_SCRIPT.exists():
-        raise RuntimeError(f"No se encontró script local del skill-bridge: {LOCAL_SKILL_BRIDGE_SCRIPT}")
+        raise RuntimeError(f"Local skill-bridge script not found: {LOCAL_SKILL_BRIDGE_SCRIPT}")
     skill_bridge_dir.mkdir(parents=True, exist_ok=True)
     target = skill_bridge_dir / "skill_bridge.py"
     shutil.copyfile(LOCAL_SKILL_BRIDGE_SCRIPT, target)
     target.chmod(0o755)
-    print(f"[ok] skill-bridge instalado en {target}")
+    print(f"[ok] skill-bridge installed at {target}")
 
 
 def smoke_test(py: Path, mcp_config: Path) -> None:
@@ -323,44 +323,44 @@ def install_user_launchers(py: Path) -> None:
             encoding="utf-8",
         )
         launcher_path.chmod(0o755)
-        print(f"[ok] launcher instalado: {launcher_path}")
+        print(f"[ok] launcher installed: {launcher_path}")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Bootstrap one-command para instalar Belanova + skill-bridge + skills.",
+        description="One-command bootstrap to install Belanova + skill-bridge + skills.",
     )
-    parser.add_argument("--venv", default=".venv", help="Directorio del virtualenv (default: .venv)")
-    parser.add_argument("--no-venv", action="store_true", help="No crear venv; usar Python actual")
+    parser.add_argument("--venv", default=".venv", help="Virtualenv directory (default: .venv)")
+    parser.add_argument("--no-venv", action="store_true", help="Do not create venv; use current Python")
     parser.add_argument(
         "--mcp-config",
         default=str(DEFAULT_MCP_CONFIG),
-        help=f"Ruta de mcp.json (default: {DEFAULT_MCP_CONFIG})",
+        help=f"Path to mcp.json (default: {DEFAULT_MCP_CONFIG})",
     )
     parser.add_argument(
         "--skill-bridge-dir",
         default=str(DEFAULT_SKILL_BRIDGE_DIR),
-        help=f"Directorio de instalación del skill-bridge (default: {DEFAULT_SKILL_BRIDGE_DIR})",
+        help=f"Skill-bridge install directory (default: {DEFAULT_SKILL_BRIDGE_DIR})",
     )
-    parser.add_argument("--skip-smoke-test", action="store_true", help="No ejecutar prueba rápida MCP")
+    parser.add_argument("--skip-smoke-test", action="store_true", help="Skip quick MCP smoke test")
     parser.add_argument(
         "--install-system-deps",
         action="store_true",
-        help="Intenta instalar paquetes del sistema (apt-get): espeak-ng, libportaudio2, ffmpeg, alsa-utils, rubberband-cli",
+        help="Try installing system packages (apt-get): espeak-ng, libportaudio2, ffmpeg, alsa-utils, rubberband-cli",
     )
-    parser.add_argument("--upgrade-pip", action="store_true", help="Actualiza pip antes de instalar requirements")
-    parser.add_argument("--no-sync-skills", action="store_true", help="No sincronizar skills externos al workspace")
-    parser.add_argument("--no-launchers", action="store_true", help="No instalar launchers en ~/.local/bin")
+    parser.add_argument("--upgrade-pip", action="store_true", help="Upgrade pip before installing requirements")
+    parser.add_argument("--no-sync-skills", action="store_true", help="Do not sync external skills into workspace")
+    parser.add_argument("--no-launchers", action="store_true", help="Do not install launchers in ~/.local/bin")
     parser.add_argument(
         "--torch",
         choices=["cpu", "default"],
         default="cpu",
-        help="Instalación de torch: cpu (default, más ligero), default (PyPI)",
+        help="Torch installation mode: cpu (default, lighter), default (PyPI)",
     )
     parser.add_argument(
         "--python",
         default="",
-        help="Ruta/binario de Python base para crear venv (default: auto >=3.10,<3.13)",
+        help="Base Python path/binary for venv creation (default: auto >=3.10,<3.13)",
     )
     return parser.parse_args()
 
@@ -399,12 +399,12 @@ def main() -> int:
     if not args.skip_smoke_test:
         smoke_test(py, mcp_config)
 
-    print("\n✅ Bootstrap completado.")
+    print("\n✅ Bootstrap completed.")
     print(f"- Python runtime: {py}")
     print(f"- MCP config: {mcp_config}")
-    print("- Ejecuta: belanova  (o make run)")
+    print("- Run: belanova  (or make run)")
     if str(USER_BIN_DIR) not in os.getenv("PATH", ""):
-        print(f"- Nota: agrega {USER_BIN_DIR} a tu PATH para usar 'belanova' globalmente.")
+        print(f"- Note: add {USER_BIN_DIR} to PATH to use 'belanova' globally.")
     return 0
 
 

@@ -133,27 +133,27 @@ def sync_skills(
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Sincroniza skills externos al workspace local (`skills/`).",
+        description="Sync external skills into the local workspace (`skills/`).",
     )
-    parser.add_argument("--dest", default=str(DEST_DEFAULT), help=f"Directorio destino (default: {DEST_DEFAULT})")
+    parser.add_argument("--dest", default=str(DEST_DEFAULT), help=f"Destination directory (default: {DEST_DEFAULT})")
     parser.add_argument(
         "--source",
         action="append",
         default=[],
-        help="Path extra de skills (repeatable). Además usa defaults y SKILL_BRIDGE_PATHS.",
+        help="Extra skills path (repeatable). Also uses defaults and SKILL_BRIDGE_PATHS.",
     )
-    parser.add_argument("--overwrite", action="store_true", help="Sobrescribe skills existentes en destino.")
+    parser.add_argument("--overwrite", action="store_true", help="Overwrite existing destination skills.")
     parser.add_argument(
         "--max-file-mb",
         type=int,
         default=25,
-        help="No copia archivos mayores a este tamaño (MB). Default: 25",
+        help="Skip files larger than this size (MB). Default: 25",
     )
     parser.add_argument(
         "--profile",
         choices=["core", "all"],
         default="core",
-        help="core=solo skills core del proyecto (default), all=todas las detectadas",
+        help="core=only project core skills (default), all=all detected skills",
     )
     return parser.parse_args()
 
@@ -167,7 +167,7 @@ def main() -> int:
         max_file_mb=int(args.max_file_mb),
         profile=args.profile,
     )
-    print(f"[ok] skills sincronizados: copied={copied} skipped={skipped}")
+    print(f"[ok] skills synced: copied={copied} skipped={skipped}")
     return 0
 
 

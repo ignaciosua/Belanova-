@@ -267,7 +267,7 @@ async def list_tools() -> list[Tool]:
     tools = [
         Tool(
             name="run_skill",
-            description="Ejecuta un skill por nombre.",
+            description="Run a skill by name.",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -279,12 +279,12 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="list_skills",
-            description="Lista los skills disponibles.",
+            description="List available skills.",
             inputSchema={"type": "object", "properties": {}},
         ),
         Tool(
             name="get_skill_help",
-            description="Devuelve el contenido de SKILL.md de un skill.",
+            description="Return SKILL.md content for a skill.",
             inputSchema={
                 "type": "object",
                 "properties": {"skill_name": {"type": "string"}},
@@ -293,7 +293,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="refresh_skills",
-            description="Limpia cache y redescubre skills.",
+            description="Clear cache and rediscover skills.",
             inputSchema={"type": "object", "properties": {}},
         ),
     ]
@@ -301,7 +301,7 @@ async def list_tools() -> list[Tool]:
         tools.append(
             Tool(
                 name=f"skill_{skill_name}",
-                description=info.get("description", f"Ejecuta {skill_name}"),
+                description=info.get("description", f"Run {skill_name}"),
                 inputSchema={
                     "type": "object",
                     "properties": {"args": {"type": "array", "items": {"type": "string"}}},
@@ -319,7 +319,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> CallToolResult:
         clear_skills_cache()
         refreshed = get_skills(force_refresh=True)
         return CallToolResult(
-            content=[TextContent(type="text", text=f"Skills refrescados. Total: {len(refreshed)}")]
+            content=[TextContent(type="text", text=f"Skills refreshed. Total: {len(refreshed)}")]
         )
 
     if name == "list_skills":
@@ -340,15 +340,15 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> CallToolResult:
         skill = skills.get(skill_name)
         if not skill:
             return CallToolResult(
-                content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' no encontrado.")]
+                content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' not found.")]
             )
         skill_md = Path(skill["path"]) / "SKILL.md"
         if skill_md.exists():
             try:
                 return CallToolResult(content=[TextContent(type="text", text=skill_md.read_text(encoding="utf-8"))])
             except Exception as exc:
-                return CallToolResult(content=[TextContent(type="text", text=f"Error leyendo SKILL.md: {exc}")])
-        return CallToolResult(content=[TextContent(type="text", text="SKILL.md no encontrado.")])
+                return CallToolResult(content=[TextContent(type="text", text=f"Error reading SKILL.md: {exc}")])
+        return CallToolResult(content=[TextContent(type="text", text="SKILL.md not found.")])
 
     if name == "run_skill":
         skill_name = str(arguments.get("skill_name", ""))
@@ -356,7 +356,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> CallToolResult:
         skill = skills.get(skill_name)
         if not skill:
             return CallToolResult(
-                content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' no encontrado.")]
+                content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' not found.")]
             )
         result = await execute_skill(skill, args)
         return CallToolResult(content=convert_to_mcp_content(result))
@@ -366,7 +366,7 @@ async def call_tool(name: str, arguments: dict[str, Any]) -> CallToolResult:
         args = arguments.get("args", []) or []
         skill = skills.get(skill_name)
         if not skill:
-            return CallToolResult(content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' no encontrado.")])
+            return CallToolResult(content=[TextContent(type="text", text=f"Error: Skill '{skill_name}' not found.")])
         result = await execute_skill(skill, args)
         return CallToolResult(content=convert_to_mcp_content(result))
 

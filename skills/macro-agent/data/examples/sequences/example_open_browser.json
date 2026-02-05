@@ -1,7 +1,7 @@
 {
   "name": "example_open_browser",
   "display_name": "Example Open Browser",
-  "description": "Secuencia de ejemplo para abrir un navegador",
+  "description": "Example sequence to open a browser",
   "created": "2026-02-05T00:00:00",
   "actions": [
     {

@@ -43,7 +43,7 @@ def main() -> int:
         )
         print(f"[tts] playback={settings.tts_playback}")
     except Exception as exc:
-        print(f"[tts] deshabilitado: {exc}")
+        print(f"[tts] disabled: {exc}")
 
     def _extract_json(text: str):
         # Try fenced JSON block
@@ -73,20 +73,20 @@ def main() -> int:
             for i, item in enumerate(obj[:max_items], 1):
                 items.append(f"item {i}: {_summarize_json(item)}")
             if len(obj) > max_items:
-                items.append(f"y {len(obj) - max_items} mas")
+                items.append(f"and {len(obj) - max_items} more")
             return "; ".join(items)
         return str(obj)
 
     def simplify_for_tts(text: str) -> str:
         json_obj = _extract_json(text)
         t = _summarize_json(json_obj) if json_obj is not None else text
-        # If this looks like RSS feed output, keep only fecha/resumen lines for TTS
-        if "Feed:" in t and ("Resumen:" in t or "Fecha:" in t):
+        # If this looks like RSS feed output, keep only date/summary lines for TTS
+        if "Feed:" in t and ("Summary:" in t or "Date:" in t):
             kept = []
             for line in t.splitlines():
                 stripped = line.strip()
                 low = stripped.lower()
-                if low.startswith("resumen:") or low.startswith("fecha:"):
+                if low.startswith("summary:") or low.startswith("date:"):
                     kept.append(stripped)
             if kept:
                 t = " ".join(kept)
@@ -105,7 +105,7 @@ def main() -> int:
         t = re.sub(r"^\s*\d+\.\s+", "", t, flags=re.M)
         t = re.sub(r"[\*_~>#|{}\[\]<>]", " ", t)
         # Allow only alphanumeric + common punctuation for TTS clarity
-        t = re.sub(r"[^0-9A-Za-záéíóúÁÉÍÓÚñÑüÜ\s.,¿?¡!;:\-()]", " ", t)
+        t = re.sub(r"[^0-9A-Za-z\\s.,?!;:\\-()]", " ", t)
         t = re.sub(r"\s+", " ", t).strip()
         return t
 
@@ -133,7 +133,7 @@ def main() -> int:
         resume_thinking_if_needed()
 
     def narrate(text: str) -> None:
-        print(f"[accion] {text}")
+        print(f"[action] {text}")
         if tts is not None:
             speak_tts(text, tag="action")
 
@@ -191,19 +191,19 @@ def main() -> int:
 
     def confirm_action(summary: str) -> bool:
         prompt = (
-            f"Voy a realizar la siguiente acción: {summary}. "
-            "Di 'Confirmar' para continuar o 'Cancelar' para abortar."
+            f"I am about to perform this action: {summary}. "
+            "Say 'Confirm' to continue or 'Cancel' to abort."
         )
         print(f"[confirm] {summary}")
         stop_thinking()
         if tts is not None:
             speak_tts(prompt, tag="confirm")
-        print("[confirm] Mantén presionada la tecla y di Confirmar o Cancelar.")
+        print("[confirm] Hold push-to-talk and say Confirm or Cancel.")
         chunk = recorder.record_once(start_immediately=True)
         if chunk is None or chunk.samples.size == 0:
             return False
         reply = asr.transcribe(chunk.samples, chunk.sample_rate).text.lower()
-        print(f"[confirm] respuesta={reply!r}")
+        print(f"[confirm] reply={reply!r}")
         if "confirm" in reply:
             return True
         if "cancel" in reply:
@@ -248,9 +248,9 @@ def main() -> int:
     global_listener.start()
 
     system_base = (
-        "Eres un agente que puede usar herramientas para realizar acciones reales. "
-        "Responde en español. Usa herramientas cuando haga falta. "
-        "Si usas herramientas, espera sus resultados antes de continuar."
+        "You are an agent that can use tools to perform real actions. "
+        "Reply in English. Use tools when needed. "
+        "If you use tools, wait for results before continuing."
     )
     system_context = ""
     context_path = PROJECT_ROOT / "docs/context/sistema_belanova.md"
@@ -277,24 +277,24 @@ def main() -> int:
             {
                 "role": "system",
                 "content": (
-                    "Resume la conversación de forma completa y útil para continuar el trabajo. "
-                    "Incluye decisiones clave, configuraciones, errores encontrados y soluciones. "
-                    "Sé conciso pero no omitas detalles importantes."
+                    "Summarize the conversation completely and usefully so work can continue. "
+                    "Include key decisions, configurations, encountered errors, and solutions. "
+                    "Be concise but do not omit important details."
                 ),
             },
             {"role": "user", "content": "\n".join([m["content"] for m in history if m["role"] != "system"])},
         ]
         summary, model_used = agent.chat(summary_prompt, use_tools=False)
-        print(f"[resumen] modelo={model_used}")
+        print(f"[summary] model={model_used}")
         history = [
             history[0],
-            {"role": "system", "content": f"Resumen de contexto:\n{summary}"},
+            {"role": "system", "content": f"Context summary:\n{summary}"},
         ]
 
-    print("Listo. Mantén presionada la tecla para hablar y suelta para enviar.")
-    print(f"Tecla push-to-talk: {settings.ptt_key}. Presiona ESC para salir.")
+    print("Ready. Hold the key to speak and release to send.")
+    print(f"Push-to-talk key: {settings.ptt_key}. Press ESC to exit.")
     if tts is not None:
-        speak_tts(f"Tecla push to talk: {settings.ptt_key}", tag="startup")
+        speak_tts(f"Push to talk key: {settings.ptt_key}", tag="startup")
 
     while True:
         def on_ptt_press():
@@ -321,7 +321,7 @@ def main() -> int:
             summarize_history()
         # Use full history when calling the agent
         if not agent_inflight.acquire(blocking=False):
-            print("[agent] ya hay una llamada en curso, ignorando este input")
+            print("[agent] a call is already in flight, ignoring this input")
             continue
         start_thinking()
         try:
@@ -340,8 +340,8 @@ def main() -> int:
         agent_inflight.release()
         if response:
             history.append({"role": "assistant", "content": response})
-            print(f"[modelo] {agent.get_last_model()}")
-            print(f"[agente] {response}")
+            print(f"[model] {agent.get_last_model()}")
+            print(f"[agent] {response}")
             if tts is not None:
                 stop_thinking()
                 speak_tts(response, tag="response")

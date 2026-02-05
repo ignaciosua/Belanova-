@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Macro Agent Skill - Control de macros de escritorio para agentes IA.
+Macro Agent Skill - Desktop macro control for AI agents.
 
-Funcionalidades:
-- Buscar elementos en el mapa de pantalla
-- Mover mouse (siempre smooth)
-- Clicks, doble click, drag
-- Escribir texto, teclas, hotkeys
-- Crear y ejecutar secuencias de acciones
+Features:
+- Search elements in the screen map
+- Move mouse (always smooth)
+- Clicks, double-click, drag
+- Type text, keys, hotkeys
+- Create and run action sequences
 """
 import sys
 import os
@@ -28,7 +28,7 @@ from data_paths import (
     ensure_local_data,
 )
 
-# Rutas de runtime local (no versionadas) con seed desde ejemplos.
+# Local runtime paths (unversioned), seeded from examples.
 SKILL_DIR = str(SKILL_DIR_PATH)
 DATA_DIR = str(LOCAL_DATA_DIR)
 ELEMENTS_FILE = str(ELEMENTS_FILE_PATH)
@@ -75,22 +75,22 @@ except ImportError:
 
 
 def output(data: Dict):
-    """Imprime resultado como JSON."""
+    """Prints result as JSON."""
     print(json.dumps(data, ensure_ascii=False, indent=2))
 
 
 def error(message: str):
-    """Imprime error como JSON."""
+    """Prints an error as JSON."""
     output({"success": False, "error": message})
     sys.exit(1)
 
 
 # ============================================
-# FUNCIONES DE ELEMENTOS (JSON)
+# ELEMENT FUNCTIONS (JSON)
 # ============================================
 
 def load_elements() -> Dict[str, Dict]:
-    """Carga los elementos desde JSON."""
+    """Loads elements from JSON."""
     if not os.path.exists(ELEMENTS_FILE):
         return {}
     
@@ -99,26 +99,26 @@ def load_elements() -> Dict[str, Dict]:
 
 
 def save_elements(elements: Dict[str, Dict]):
-    """Guarda los elementos en JSON."""
+    """Saves elements to JSON."""
     with open(ELEMENTS_FILE, 'w', encoding='utf-8') as f:
         json.dump(elements, f, indent=2, ensure_ascii=False)
 
 
 def get_element(name: str) -> Optional[Dict]:
-    """Obtiene un elemento por nombre exacto o parcial."""
+    """Gets an element by exact or partial name."""
     elements = load_elements()
     name_lower = name.lower()
     
-    # Primero buscar exacto
+    # First try exact match
     if name_lower in elements:
         return elements[name_lower]
     
-    # Buscar por nombre parcial
+    # Then try partial name
     for key, elem in elements.items():
         if name_lower in key.lower():
             return elem
     
-    # Buscar por tags
+    # Then try tags
     for key, elem in elements.items():
         tags = elem.get('tags', [])
         if any(name_lower in tag.lower() for tag in tags):
@@ -129,7 +129,7 @@ def get_element(name: str) -> Optional[Dict]:
 
 def add_element(name: str, description: str = "", images: List[str] = None, 
                 tags: List[str] = None) -> Dict:
-    """Agrega o actualiza un elemento."""
+    """Adds or updates an element."""
     elements = load_elements()
     
     name_key = name.lower().replace(' ', '_')
@@ -146,7 +146,7 @@ def add_element(name: str, description: str = "", images: List[str] = None,
 
 
 def add_image_to_element(name: str, image_file: str) -> Optional[Dict]:
-    """Agrega una imagen a un elemento existente o crea uno nuevo."""
+    """Adds an image to an existing element or creates a new one."""
     elements = load_elements()
     name_key = name.lower().replace(' ', '_')
     
@@ -154,7 +154,7 @@ def add_image_to_element(name: str, image_file: str) -> Optional[Dict]:
         if image_file not in elements[name_key]['images']:
             elements[name_key]['images'].append(image_file)
     else:
-        # Crear nuevo elemento
+        # Create a new element
         elements[name_key] = {
             "name": name_key,
             "description": "",
@@ -167,27 +167,27 @@ def add_image_to_element(name: str, image_file: str) -> Optional[Dict]:
 
 
 def find_element(name: str) -> Optional[Dict]:
-    """Busca elemento por nombre exacto o parcial usando JSON."""
+    """Finds an element by exact or partial name using JSON."""
     return get_element(name)
 
 
 def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional[Tuple[int, int]], str, Dict]:
     """
-    Busca elemento por imagen en pantalla (template matching).
-    SIEMPRE usa búsqueda por imagen, NUNCA coordenadas fijas.
+    Finds an element by image on screen (template matching).
+    ALWAYS uses image search, NEVER fixed coordinates.
     
-    Primero busca en elements.json para obtener las imágenes válidas y exclusiones.
-    Si no existe en JSON, busca por patrón de nombre en captures/.
+    First checks elements.json to get valid images and exclusions.
+    If not present in JSON, searches by name pattern in captures/.
     
-    Si hay múltiples coincidencias, retorna la que tenga mayor score de confianza.
+    If there are multiple matches, returns the one with highest confidence.
     
     Args:
-        name: Nombre del elemento a buscar
-        confidence: Umbral de confianza (0.0 a 1.0)
+        name: Element name to search
+        confidence: Confidence threshold (0.0 to 1.0)
     
-    Retorna: (coordenadas, método_usado, info_adicional)
-    - Si encuentra por imagen: ((x, y), 'image', {matches_found, best_score, images_tested})
-    - Si no encuentra: (None, 'not_found', {matches_found, images_tested})
+    Returns: (coordinates, method_used, extra_info)
+    - If found by image: ((x, y), 'image', {matches_found, best_score, images_tested})
+    - If not found: (None, 'not_found', {matches_found, images_tested})
     """
     info = {
         "matches_found": 0,
@@ -203,11 +203,11 @@ def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional
     if not HAS_CV2:
         return None, 'no_cv2', info
     
-    # Normalizar nombre
+    # Normalize name
     name_normalized = name.replace(' ', '_').lower()
     
     # ============================================
-    # PASO 1: Buscar configuración en elements.json
+    # STEP 1: Check configuration in elements.json
     # ============================================
     element = get_element(name)
     
@@ -215,13 +215,13 @@ def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional
     
     if element:
         info["element_config"] = element['name']
-        # Usar imágenes definidas en el elemento
+        # Use images defined in the element
         for img in element.get('images', []):
             img_path = os.path.join(CAPTURES_DIR, img)
             if os.path.exists(img_path):
                 image_files.append(img_path)
     
-    # Si no hay imágenes del JSON, buscar por patrón (fallback)
+    # If JSON has no images, search by pattern (fallback)
     if not image_files:
         patterns = [
             os.path.join(CAPTURES_DIR, f"{name_normalized}.png"),
@@ -230,7 +230,7 @@ def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional
             os.path.join(CAPTURES_DIR, f"{name.replace(' ', '_')}_*.png"),
         ]
         
-        # Buscar coincidencias parciales si el nombre tiene palabras
+        # Try partial matches if name has multiple words
         words = name_normalized.split('_')
         if len(words) > 1:
             all_files = glob.glob(os.path.join(CAPTURES_DIR, "*.png"))
@@ -242,55 +242,55 @@ def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional
         for pattern in patterns:
             image_files.extend(glob.glob(pattern))
         
-        # Eliminar duplicados
+        # Remove duplicates
         image_files = list(dict.fromkeys(image_files))
     
     info["images_tested"] = len(image_files)
     
-    # Capturar screenshot de pantalla completa
+    # Capture full-screen screenshot
     try:
         screenshot = pyautogui.screenshot()
         screen_np = np.array(screenshot)
-        # Convertir de RGB a BGR (formato OpenCV)
+        # Convert RGB to BGR (OpenCV format)
         screen_bgr = cv2.cvtColor(screen_np, cv2.COLOR_RGB2BGR)
     except Exception as e:
         return None, 'screenshot_error', info
     
     # ============================================
-    # PASO 2: Buscar elemento objetivo
+    # STEP 2: Search the target element
     # ============================================
     best_match = None
     best_confidence = 0
     
     for img_path in image_files:
         try:
-            # Cargar template a COLOR para mayor precisión
+            # Load template in color for better accuracy
             template = cv2.imread(img_path, cv2.IMREAD_COLOR)
             if template is None:
                 continue
             
             h, w = template.shape[:2]
             
-            # Realizar template matching a COLOR
+            # Run color template matching
             result = cv2.matchTemplate(screen_bgr, template, cv2.TM_CCOEFF_NORMED)
             
-            # Encontrar todas las ubicaciones que superen el threshold
+            # Find all locations above threshold
             locations = np.where(result >= confidence)
             
-            # Contar cuántos matches encontramos para esta imagen
+            # Count matches for this image
             matches_for_this_image = len(locations[0])
             if matches_for_this_image > 0:
                 info["matches_found"] += matches_for_this_image
             
-            # Para cada ubicación, obtener el score exacto
-            for pt in zip(*locations[::-1]):  # [::-1] invierte para tener (x, y)
+            # For each location, get exact score
+            for pt in zip(*locations[::-1]):  # [::-1] swaps to (x, y)
                 match_confidence = result[pt[1], pt[0]]
                 
-                # Calcular centro del match
+                # Compute center of the match
                 center_x = int(pt[0] + w // 2)
                 center_y = int(pt[1] + h // 2)
                 
-                # Registrar todos los matches
+                # Record all matches
                 info["all_matches"].append({
                     "x": center_x,
                     "y": center_y,
@@ -298,42 +298,42 @@ def find_element_on_screen(name: str, confidence: float = 0.8) -> Tuple[Optional
                     "image": os.path.basename(img_path)
                 })
                 
-                # Si esta coincidencia es mejor que la mejor encontrada
+                # Keep the best match
                 if match_confidence > best_confidence:
                     best_confidence = float(match_confidence)
                     best_match = (center_x, center_y)
         
         except Exception as e:
-            # Continuar con siguiente imagen si hay error
+            # Continue with next image on error
             continue
     
-    # Ordenar todos los matches por score (descendente)
+    # Sort matches by score (descending)
     info["all_matches"].sort(key=lambda x: x["score"], reverse=True)
     info["best_score"] = best_confidence
     
     if best_match:
         return best_match, 'image', info
     
-    # NO hay fallback a CSV - solo búsqueda por imagen
-    # Si no encuentra la imagen, retorna not_found
+    # NO CSV fallback - image search only
+    # If image is not found, return not_found
     return None, 'not_found', info
 
 
 def search_elements(query: str) -> List[Dict]:
-    """Busca elementos por texto en nombre, descripción o tags."""
+    """Searches elements by text in name, description, or tags."""
     elements = load_elements()
     query_lower = query.lower()
     results = []
     
     for key, elem in elements.items():
         score = 0
-        nombre = elem['name'].lower()
+        elem_name = elem['name'].lower()
         desc = elem.get('description', '').lower()
         tags = ' '.join(elem.get('tags', [])).lower()
         
-        if query_lower == nombre:
+        if query_lower == elem_name:
             score = 100
-        elif query_lower in nombre:
+        elif query_lower in elem_name:
             score = 50
         if query_lower in desc:
             score += 20
@@ -348,51 +348,51 @@ def search_elements(query: str) -> List[Dict]:
 
 
 # ============================================
-# CONFIGURACIÓN DE MOVIMIENTO HUMANO
+# HUMAN-LIKE MOVEMENT CONFIGURATION
 # ============================================
-# IMPORTANTE: Todas las funciones de mouse usan move_smooth() con humanize=True
-# por defecto para evitar detección de bots. Esto incluye:
-# - move_smooth(): Movimiento con curvas de Bézier, jitter, micro-pausas y overshoot
-# - do_click(): Usa move_smooth() antes del click
-# - do_double_click(): Usa move_smooth() antes del doble click  
-# - do_drag(): Usa move_smooth() para ir al inicio Y para arrastrar
-# - do_scroll(): Usa move_smooth() si se especifica posición
+# IMPORTANT: all mouse functions use move_smooth() with humanize=True
+# by default to reduce bot-like patterns. This includes:
+# - move_smooth(): movement with Bezier curves, jitter, micro-pauses, and overshoot
+# - do_click(): uses move_smooth() before clicking
+# - do_double_click(): uses move_smooth() before double-clicking
+# - do_drag(): uses move_smooth() to move to start and while dragging
+# - do_scroll(): uses move_smooth() when a position is provided
 # ============================================
 import random
 import math
 
-# Parámetros para simular movimiento humano (ajustables)
+# Tunable parameters for human-like movement
 HUMAN_MOVEMENT_CONFIG = {
-    # Jitter: pequeñas desviaciones aleatorias durante el movimiento
-    'jitter_min': 1,        # Desviación mínima en píxeles
-    'jitter_max': 4,        # Desviación máxima en píxeles
-    'jitter_frequency': 0.4, # Probabilidad de aplicar jitter por paso
+    # Jitter: small random offsets while moving
+    'jitter_min': 1,        # Minimum offset in pixels
+    'jitter_max': 4,        # Maximum offset in pixels
+    'jitter_frequency': 0.4, # Probability of jitter on each step
     
-    # Curva de Bézier: curvatura del movimiento
-    'curve_variance_min': 0.15,  # Varianza mínima de puntos de control
-    'curve_variance_max': 0.35,  # Varianza máxima de puntos de control
+    # Bezier curve: movement curvature
+    'curve_variance_min': 0.15,  # Minimum control-point variance
+    'curve_variance_max': 0.35,  # Maximum control-point variance
     
-    # Velocidad: variaciones en la velocidad
-    'speed_variance_min': 0.85,  # Multiplicador mínimo de velocidad
-    'speed_variance_max': 1.20,  # Multiplicador máximo de velocidad
+    # Speed: random variation range
+    'speed_variance_min': 0.85,  # Minimum speed multiplier
+    'speed_variance_max': 1.20,  # Maximum speed multiplier
     
-    # Micro-pausas: pequeñas pausas durante el movimiento
-    'micropause_chance': 0.08,    # Probabilidad de micro-pausa
-    'micropause_min': 0.02,       # Duración mínima de micro-pausa
-    'micropause_max': 0.08,       # Duración máxima de micro-pausa
+    # Micro-pauses during movement
+    'micropause_chance': 0.08,    # Micro-pause probability
+    'micropause_min': 0.02,       # Minimum micro-pause duration
+    'micropause_max': 0.08,       # Maximum micro-pause duration
     
-    # Overshoot: pasarse del objetivo y corregir
-    'overshoot_chance': 0.20,     # Probabilidad de overshoot
-    'overshoot_distance_min': 3,  # Distancia mínima de overshoot
-    'overshoot_distance_max': 12, # Distancia máxima de overshoot
+    # Overshoot: go past target and correct
+    'overshoot_chance': 0.20,     # Overshoot probability
+    'overshoot_distance_min': 3,  # Minimum overshoot distance
+    'overshoot_distance_max': 12, # Maximum overshoot distance
     
-    # Pasos del movimiento
-    'steps_per_second': 60,       # Pasos por segundo (suavidad del movimiento)
+    # Movement steps
+    'steps_per_second': 60,       # Steps per second (smoothness)
 }
 
 
 def _bezier_curve(t: float, p0: tuple, p1: tuple, p2: tuple, p3: tuple) -> tuple:
-    """Calcula un punto en una curva de Bézier cúbica."""
+    """Computes a point on a cubic Bezier curve."""
     u = 1 - t
     tt = t * t
     uu = u * u
@@ -406,7 +406,7 @@ def _bezier_curve(t: float, p0: tuple, p1: tuple, p2: tuple, p3: tuple) -> tuple
 
 
 def _generate_control_points(start: tuple, end: tuple) -> tuple:
-    """Genera puntos de control aleatorios para la curva de Bézier."""
+    """Generates random control points for the Bezier curve."""
     cfg = HUMAN_MOVEMENT_CONFIG
     
     dx = end[0] - start[0]
@@ -440,7 +440,7 @@ def _generate_control_points(start: tuple, end: tuple) -> tuple:
 
 
 def _apply_jitter(x: float, y: float) -> tuple:
-    """Aplica pequeñas desviaciones aleatorias (jitter) a una posición."""
+    """Applies small random jitter offsets to a position."""
     cfg = HUMAN_MOVEMENT_CONFIG
     
     if random.random() < cfg['jitter_frequency']:
@@ -453,7 +453,7 @@ def _apply_jitter(x: float, y: float) -> tuple:
 
 
 def _easing_function(t: float) -> float:
-    """Función de easing para velocidad no lineal (ease-in-out)."""
+    """Easing function for non-linear speed (ease-in-out)."""
     if t < 0.5:
         return 2 * t * t
     else:
@@ -461,79 +461,79 @@ def _easing_function(t: float) -> float:
 
 
 # ============================================
-# FUNCIONES DE MOUSE
+# MOUSE FUNCTIONS
 # ============================================
 
 def move_smooth(x: int, y: int, duration: float = 0.5, humanize: bool = True):
     """
-    Mueve el mouse suavemente con movimiento tipo humano.
+    Moves the mouse smoothly with human-like movement.
     
-    Características:
-    - Curvas de Bézier para trayectorias no lineales
-    - Jitter (temblor) para simular mano humana
-    - Velocidad variable con aceleración/desaceleración
-    - Micro-pausas aleatorias
-    - Posible overshoot y corrección
+    Characteristics:
+    - Bezier curves for non-linear trajectories
+    - Jitter to simulate hand tremor
+    - Variable speed with acceleration/deceleration
+    - Random micro-pauses
+    - Optional overshoot and correction
     """
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
     cfg = HUMAN_MOVEMENT_CONFIG
     
-    # Obtener posición actual
+    # Get current position
     start_pos = pyautogui.position()
     start = (start_pos.x, start_pos.y)
     end = (float(x), float(y))
     
-    # Calcular distancia
+    # Compute distance
     dx = end[0] - start[0]
     dy = end[1] - start[1]
     distance = math.sqrt(dx * dx + dy * dy)
     
-    # Si la distancia es muy pequeña, solo mover directamente
+    # If distance is very small, move directly
     if distance < 5:
         pyautogui.moveTo(x, y)
         return
     
     if not humanize:
-        # Movimiento lineal simple (legacy)
+        # Simple linear movement (legacy)
         pyautogui.moveTo(x, y, duration=duration)
         return
     
-    # Aplicar variación de velocidad
+    # Apply speed variance
     speed_mult = random.uniform(cfg['speed_variance_min'], cfg['speed_variance_max'])
     actual_duration = duration * speed_mult
     
-    # Generar puntos de control para la curva de Bézier
+    # Generate control points for the Bezier curve
     p1, p2 = _generate_control_points(start, end)
     
-    # Calcular número de pasos
+    # Compute number of steps
     num_steps = max(int(actual_duration * cfg['steps_per_second']), 10)
     step_duration = actual_duration / num_steps
     
-    # Ejecutar movimiento
+    # Execute movement
     for i in range(num_steps + 1):
         t = i / num_steps
         
-        # Aplicar easing para velocidad no lineal
+        # Apply easing for non-linear speed
         t_eased = _easing_function(t)
         
-        # Calcular posición en la curva de Bézier
+        # Compute position on Bezier curve
         pos = _bezier_curve(t_eased, start, p1, p2, end)
         
-        # Aplicar jitter
+        # Apply jitter
         pos = _apply_jitter(pos[0], pos[1])
         
-        # Mover el mouse
+        # Move the mouse
         pyautogui.moveTo(int(pos[0]), int(pos[1]), _pause=False)
         
-        # Micro-pausa aleatoria
+        # Random micro-pause
         if random.random() < cfg['micropause_chance']:
             time.sleep(random.uniform(cfg['micropause_min'], cfg['micropause_max']))
         else:
             time.sleep(step_duration)
     
-    # Overshoot y corrección
+    # Overshoot and correction
     if random.random() < cfg['overshoot_chance']:
         if distance > 0:
             dir_x = dx / distance
@@ -548,17 +548,17 @@ def move_smooth(x: int, y: int, duration: float = 0.5, humanize: bool = True):
         pyautogui.moveTo(overshoot_x, overshoot_y, _pause=False)
         time.sleep(random.uniform(0.03, 0.08))
         
-        # Corregir al objetivo final
+        # Correct to final target
         pyautogui.moveTo(x, y, _pause=False)
     else:
-        # Asegurar que llegamos exactamente al destino
+        # Ensure we end exactly at the target
         pyautogui.moveTo(x, y, _pause=False)
 
 
 def do_click(x: int = None, y: int = None, button: str = 'left', duration: float = 0.5):
-    """Click en posición (con movimiento suave si se especifica posición)."""
+    """Clicks at position (smooth move if a position is provided)."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
     if x is not None and y is not None:
         move_smooth(x, y, duration)
@@ -569,9 +569,9 @@ def do_click(x: int = None, y: int = None, button: str = 'left', duration: float
 
 
 def do_double_click(x: int = None, y: int = None, duration: float = 0.5):
-    """Doble click."""
+    """Double-click."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
     if x is not None and y is not None:
         move_smooth(x, y, duration)
@@ -582,33 +582,33 @@ def do_double_click(x: int = None, y: int = None, duration: float = 0.5):
 
 
 def do_drag(x1: int, y1: int, x2: int, y2: int, duration: float = 0.5):
-    """Arrastra de un punto a otro con movimiento humano."""
+    """Drags from one point to another with human-like movement."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
-    # Mover al punto inicial con movimiento humano
+    # Move to start point with human-like movement
     move_smooth(x1, y1, 0.3, humanize=True)
     time.sleep(0.1)
     
-    # Presionar botón
+    # Press mouse button
     pyautogui.mouseDown()
     time.sleep(0.05)
     
-    # Arrastrar al destino con movimiento humano
+    # Drag to destination with human-like movement
     move_smooth(x2, y2, duration, humanize=True)
     time.sleep(0.05)
     
-    # Soltar botón
+    # Release mouse button
     pyautogui.mouseUp()
 
 
 def do_scroll(amount: int, x: int = None, y: int = None):
-    """Scroll (con movimiento humano si se especifica posición)."""
+    """Scroll (with human-like movement if position is provided)."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
     if x is not None and y is not None:
-        # Mover con movimiento humano antes de hacer scroll
+        # Move with human-like motion before scrolling
         move_smooth(x, y, 0.3, humanize=True)
         time.sleep(0.1)
     
@@ -617,70 +617,70 @@ def do_scroll(amount: int, x: int = None, y: int = None):
 
 
 # ============================================
-# FUNCIONES DE TECLADO
+# KEYBOARD FUNCTIONS
 # ============================================
 
 def remove_accents(text: str) -> str:
-    """Remueve acentos y diacríticos de un texto."""
-    # Normaliza a NFD (separa caracteres base de diacríticos)
+    """Removes accents and diacritics from text."""
+    # Normalize to NFD (split base characters and diacritics)
     nfd = unicodedata.normalize('NFD', text)
-    # Filtra solo caracteres que NO son marcas diacríticas
+    # Keep only characters that are not diacritic marks
     return ''.join(char for char in nfd if unicodedata.category(char) != 'Mn')
 
 
 def do_write(text: str, interval: float = 0.0):
-    """Escribe texto (sin acentos para evitar problemas). Maneja saltos de línea con Shift+Enter."""
+    """Types text (without accents to reduce issues). Handles new lines with Shift+Enter."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     
-    # Remover acentos antes de escribir
+    # Remove accents before typing
     text_clean = remove_accents(text)
     
     # Audio feedback based on text length
     sound_type(len(text_clean))
     
-    # Si el texto tiene saltos de línea, procesarlos
+    # If text contains line breaks, handle them
     if '\n' in text_clean:
         lines = text_clean.split('\n')
         for i, line in enumerate(lines):
-            if line:  # Solo escribir si la línea no está vacía
+            if line:  # Only type non-empty lines
                 pyautogui.write(line, interval=interval)
-            # Si no es la última línea, presionar Shift+Enter para nueva línea
+            # If it is not the last line, use Shift+Enter for new line
             if i < len(lines) - 1:
                 pyautogui.hotkey('shift', 'enter')
-                time.sleep(0.1)  # Pequeña pausa entre líneas
+                time.sleep(0.1)  # Small pause between lines
     else:
-        # Texto sin saltos de línea, escribir normalmente
+        # Text without line breaks, type normally
         pyautogui.write(text_clean, interval=interval)
 
 
 def do_press(key: str):
-    """Presiona una tecla."""
+    """Presses a key."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     pyautogui.press(key)
     sound_key()  # Audio feedback
 
 
 def do_hotkey(*keys):
-    """Combinación de teclas."""
+    """Key combination."""
     if not HAS_PYAUTOGUI:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
     pyautogui.hotkey(*keys)
     sound_hotkey()  # Audio feedback
 
 
 # ============================================
-# SECUENCIAS
+# SEQUENCES
 # ============================================
 
 def get_sequence_path(name: str) -> str:
-    """Obtiene la ruta del archivo de secuencia."""
+    """Gets the sequence file path."""
     return os.path.join(SEQUENCES_DIR, f"{name}.json")
 
 
 def load_sequence(name: str) -> Optional[Dict]:
-    """Carga una secuencia."""
+    """Loads a sequence."""
     path = get_sequence_path(name)
     if not os.path.exists(path):
         return None
@@ -689,14 +689,14 @@ def load_sequence(name: str) -> Optional[Dict]:
 
 
 def save_sequence(name: str, data: Dict):
-    """Guarda una secuencia."""
+    """Saves a sequence."""
     path = get_sequence_path(name)
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def execute_action(action: Dict) -> Dict:
-    """Ejecuta una acción individual."""
+    """Executes one action."""
     action_type = action.get('type', '')
     result = {"action": action_type, "success": True}
     
@@ -708,7 +708,7 @@ def execute_action(action: Dict) -> Dict:
         elif action_type == 'move-to':
             coords, method, info = find_element_on_screen(action['target'], action.get('confidence', 0.8))
             if not coords:
-                return {"success": False, "error": f"Elemento no encontrado: {action['target']}", **info}
+                return {"success": False, "error": f"Element not found: {action['target']}", **info}
             move_smooth(coords[0], coords[1], action.get('duration', 0.5))
             result['target'] = action['target']
             result['coordinates'] = {"x": coords[0], "y": coords[1]}
@@ -722,7 +722,7 @@ def execute_action(action: Dict) -> Dict:
         elif action_type == 'click-on':
             coords, method, info = find_element_on_screen(action['target'], action.get('confidence', 0.8))
             if not coords:
-                return {"success": False, "error": f"Elemento no encontrado: {action['target']}", **info}
+                return {"success": False, "error": f"Element not found: {action['target']}", **info}
             do_click(coords[0], coords[1], action.get('button', 'left'))
             result['target'] = action['target']
             result['coordinates'] = {"x": coords[0], "y": coords[1]}
@@ -775,7 +775,7 @@ def execute_action(action: Dict) -> Dict:
                 result['image_base64'] = base64.b64encode(img_data).decode('utf-8')
             
         else:
-            return {"success": False, "error": f"Acción desconocida: {action_type}"}
+            return {"success": False, "error": f"Unknown action: {action_type}"}
             
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -784,38 +784,38 @@ def execute_action(action: Dict) -> Dict:
 
 
 def is_element_visible(name: str, confidence: float = 0.8) -> Tuple[bool, Dict]:
-    """Verifica si un elemento está visible en pantalla sin hacer click.
+    """Checks if an element is visible on screen without clicking.
     
-    Retorna: (visible, info)
+    Returns: (visible, info)
     """
     coords, method, info = find_element_on_screen(name, confidence)
     return coords is not None, info
 
 
 def execute_actions(actions: List[Dict]) -> List[Dict]:
-    """Ejecuta una lista de acciones con soporte para condicionales if-visible."""
+    """Executes a list of actions with if-visible conditional support."""
     results = []
     i = 0
     while i < len(actions):
         action = actions[i]
         action_type = action.get('type', '')
         
-        # Soporte para condicionales if-visible / if-not-visible
+        # Support for if-visible / if-not-visible conditionals
         if action_type in ('if-visible', 'if-not-visible'):
             target = action.get('target', '')
             then_actions = action.get('then', [])
             else_actions = action.get('else', [])
             
-            # Verificar visibilidad del elemento
+            # Check element visibility
             visible, info = is_element_visible(target, action.get('confidence', 0.8))
             
-            # Determinar qué camino tomar
+            # Determine which branch to execute
             if action_type == 'if-visible':
                 condition_met = visible
             else:  # if-not-visible
                 condition_met = not visible
             
-            # Registrar resultado de la evaluación
+            # Record condition evaluation result
             result = {
                 "action": action_type,
                 "target": target,
@@ -828,18 +828,18 @@ def execute_actions(actions: List[Dict]) -> List[Dict]:
             }
             results.append(result)
             
-            # Ejecutar el camino correspondiente
+            # Execute the selected branch
             branch_actions = then_actions if condition_met else else_actions
             for branch_action in branch_actions:
                 branch_result = execute_action(branch_action)
                 branch_result['step'] = i + 1
                 branch_result['branch'] = "then" if condition_met else "else"
                 results.append(branch_result)
-                # Si una acción del branch falla, detener
+                # Stop if a branch action fails
                 if not branch_result.get('success', True):
                     return results
         else:
-            # Acción normal
+            # Normal action
             result = execute_action(action)
             result['step'] = i + 1
             results.append(result)
@@ -852,59 +852,59 @@ def execute_actions(actions: List[Dict]) -> List[Dict]:
 
 
 # ============================================
-# COMANDOS CLI
+# CLI COMMANDS
 # ============================================
 
 def cmd_search(args):
-    """Buscar elementos."""
+    """Search elements."""
     results = search_elements(args.query)
     output({
         "action": "search",
         "query": args.query,
         "count": len(results),
-        "results": [{"nombre": r['name'], "descripcion": r.get('description', '')} for r in results[:10]]
+        "results": [{"name": r['name'], "description": r.get('description', '')} for r in results[:10]]
     })
 
 
 def cmd_find(args):
-    """Buscar por nombre."""
+    """Find by name."""
     elem = find_element(args.name)
     if elem:
         output({
             "success": True,
             "action": "find",
             "element": {
-                "nombre": elem['name'],
-                "descripcion": elem.get('description', ''),
+                "name": elem['name'],
+                "description": elem.get('description', ''),
                 "images": elem.get('images', []),
                 "tags": elem.get('tags', [])
             }
         })
     else:
-        error(f"Elemento no encontrado: {args.name}")
+        error(f"Element not found: {args.name}")
 
 
 def cmd_list(args):
-    """Listar todos los elementos."""
+    """List all elements."""
     elements = load_elements()
     output({
         "action": "list",
         "count": len(elements),
-        "elements": [{"nombre": v['name'], "descripcion": v.get('description', '')[:50]} for v in elements.values()]
+        "elements": [{"name": v['name'], "description": v.get('description', '')[:50]} for v in elements.values()]
     })
 
 
 def cmd_near(args):
-    """Comando obsoleto: Ya no se usan coordenadas fijas."""
+    """Deprecated command: fixed coordinates are no longer used."""
     output({
         "action": "near",
         "success": False,
-        "message": "Este comando está obsoleto. Ahora se usa detección por imagen, no coordenadas fijas. Use 'find' o 'search' en su lugar."
+        "message": "This command is deprecated. Image detection is now used instead of fixed coordinates. Use 'find' or 'search'."
     })
 
 
 def cmd_stats(args):
-    """Estadísticas del sistema."""
+    """System statistics."""
     elements = load_elements()
     output({
         "action": "stats",
@@ -916,37 +916,37 @@ def cmd_stats(args):
 
 
 def cmd_move(args):
-    """Mover mouse."""
+    """Move mouse."""
     result = execute_action({"type": "move", "x": args.x, "y": args.y, "duration": args.duration})
     output(result)
 
 
 def cmd_move_to(args):
-    """Mover a elemento."""
+    """Move to element."""
     result = execute_action({"type": "move-to", "target": args.name, "duration": args.duration})
     output(result)
 
 
 def cmd_click(args):
-    """Click en coordenadas."""
+    """Click at coordinates."""
     result = execute_action({"type": "click", "x": args.x, "y": args.y})
     output(result)
 
 
 def cmd_click_on(args):
-    """Click en elemento."""
+    """Click on element."""
     result = execute_action({"type": "click-on", "target": args.name})
     output(result)
 
 
 def cmd_double_click(args):
-    """Doble click."""
+    """Double-click."""
     result = execute_action({"type": "double-click", "x": args.x, "y": args.y})
     output(result)
 
 
 def cmd_right_click(args):
-    """Click derecho."""
+    """Right-click."""
     result = execute_action({"type": "right-click", "x": args.x, "y": args.y})
     output(result)
 
@@ -974,7 +974,7 @@ def cmd_write(args):
 
 
 def cmd_press(args):
-    """Presionar tecla."""
+    """Press key."""
     result = execute_action({"type": "press", "key": args.key})
     output(result)
 
@@ -986,16 +986,16 @@ def cmd_hotkey(args):
 
 
 def cmd_mouse_pos(args):
-    """Posición actual del mouse."""
+    """Current mouse position."""
     if HAS_PYAUTOGUI:
         pos = pyautogui.position()
         output({"action": "mouse-pos", "x": pos.x, "y": pos.y})
     else:
-        error("pyautogui no disponible")
+        error("pyautogui not available")
 
 
 def cmd_wait(args):
-    """Esperar."""
+    """Wait."""
     result = execute_action({"type": "wait", "seconds": args.seconds})
     output(result)
 
@@ -1007,7 +1007,7 @@ def cmd_screenshot(args):
 
 
 def cmd_region_capture(args):
-    """Captura interactiva de región con mouse."""
+    """Interactive mouse region capture."""
     import subprocess
     
     script_candidates = [
@@ -1017,12 +1017,12 @@ def cmd_region_capture(args):
     ]
     script_path = next((p for p in script_candidates if os.path.exists(p)), None)
     if not script_path:
-        error("Script region_capture no encontrado (region-capture).")
+        error("region_capture script not found (region-capture).")
         return
     
     try:
-        # Ejecutar el script de region capture.
-        # Por defecto guarda en data/local/ del skill.
+        # Run the region capture script.
+        # By default it saves to the skill's data/local/.
         result = subprocess.run(
             [sys.executable, script_path, "--data-dir", DATA_DIR],
             capture_output=False
@@ -1030,15 +1030,15 @@ def cmd_region_capture(args):
         output({
             "success": result.returncode == 0,
             "action": "region-capture",
-            "message": "Region capture finalizado" if result.returncode == 0 else "Region capture cerrado",
+            "message": "Region capture completed" if result.returncode == 0 else "Region capture closed",
             "data_dir": DATA_DIR
         })
     except Exception as e:
-        error(f"Error ejecutando region capture: {e}")
+        error(f"Error running region capture: {e}")
 
 
 def cmd_run(args):
-    """Ejecutar acciones desde JSON."""
+    """Execute actions from JSON."""
     try:
         data = json.loads(args.json_str)
         actions = data.get('actions', [data] if 'type' in data else [])
@@ -1050,11 +1050,11 @@ def cmd_run(args):
             "results": results
         })
     except json.JSONDecodeError as e:
-        error(f"JSON inválido: {e}")
+        error(f"Invalid JSON: {e}")
 
 
 def cmd_seq_create(args):
-    """Crear secuencia."""
+    """Create sequence."""
     seq = {
         "name": args.name,
         "display_name": getattr(args, 'display_name', None) or args.name,
@@ -1073,7 +1073,7 @@ def cmd_seq_create(args):
 
 
 def parse_simple_action(action_str: str) -> Dict:
-    """Parsea una acción simple desde string."""
+    """Parses a simple action from string."""
     parts = action_str.split(maxsplit=1)
     action_type = parts[0]
     action = {"type": action_type}
@@ -1106,25 +1106,25 @@ def parse_simple_action(action_str: str) -> Dict:
 
 
 def cmd_seq_add(args):
-    """Agregar acción a secuencia."""
+    """Add action to sequence."""
     seq = load_sequence(args.name)
     if not seq:
-        error(f"Secuencia no encontrada: {args.name}")
+        error(f"Sequence not found: {args.name}")
     
-    # Parsear la acción desde string
+    # Parse action from string
     parts = args.action.split(maxsplit=1)
     action_type = parts[0]
     
-    # Soporte para if-visible / if-not-visible
+    # Support for if-visible / if-not-visible
     if action_type in ('if-visible', 'if-not-visible'):
         if len(parts) < 2:
-            error(f"{action_type} requiere un target")
+            error(f"{action_type} requires a target")
         
         target = parts[1]
         then_actions = []
         else_actions = []
         
-        # Parsear --then y --else desde args
+        # Parse --then and --else from args
         if hasattr(args, 'then_actions') and args.then_actions:
             for then_str in args.then_actions:
                 then_actions.append(parse_simple_action(then_str))
@@ -1140,7 +1140,7 @@ def cmd_seq_add(args):
             "else": else_actions
         }
     else:
-        # Acción normal
+        # Regular action
         action = parse_simple_action(args.action)
     
     seq['actions'].append(action)
@@ -1156,18 +1156,18 @@ def cmd_seq_add(args):
 
 
 def cmd_seq_show(args):
-    """Mostrar secuencia."""
+    """Show sequence."""
     seq = load_sequence(args.name)
     if not seq:
-        error(f"Secuencia no encontrada: {args.name}")
+        error(f"Sequence not found: {args.name}")
     output({"action": "seq-show", "sequence": seq})
 
 
 def cmd_seq_run(args):
-    """Ejecutar secuencia."""
+    """Run sequence."""
     seq = load_sequence(args.name)
     if not seq:
-        error(f"Secuencia no encontrada: {args.name}")
+        error(f"Sequence not found: {args.name}")
     
     results = execute_actions(seq['actions'])
     output({
@@ -1180,16 +1180,16 @@ def cmd_seq_run(args):
 
 
 def cmd_seq_list(args):
-    """Listar secuencias con información completa."""
+    """List sequences with complete information."""
     sequences = []
     if os.path.exists(SEQUENCES_DIR):
         for f in os.listdir(SEQUENCES_DIR):
             if f.endswith('.json'):
                 seq = load_sequence(f[:-5])
                 if seq:
-                    # Resumen de acciones
+                    # Action summary
                     action_summary = []
-                    for act in seq.get('actions', [])[:5]:  # Primeras 5 acciones
+                    for act in seq.get('actions', [])[:5]:  # First 5 actions
                         if act['type'] == 'click-on':
                             action_summary.append(f"click:{act.get('target', '?')}")
                         elif act['type'] == 'wait':
@@ -1204,7 +1204,7 @@ def cmd_seq_list(args):
                             action_summary.append(act['type'])
                     
                     if len(seq.get('actions', [])) > 5:
-                        action_summary.append(f"...+{len(seq['actions'])-5} más")
+                        action_summary.append(f"...+{len(seq['actions'])-5} more")
                     
                     sequences.append({
                         "name": seq['name'],
@@ -1220,25 +1220,25 @@ def cmd_seq_list(args):
         "action": "seq-list", 
         "count": len(sequences), 
         "sequences": sequences,
-        "hint": "Usa 'seq-show <name>' para ver detalles o 'seq-describe <name> --display-name <nombre> --description <desc>' para actualizar"
+        "hint": "Use 'seq-show <name>' for details or 'seq-describe <name> --display-name <name> --description <desc>' to update"
     })
 
 
 def cmd_seq_delete(args):
-    """Eliminar secuencia."""
+    """Delete sequence."""
     path = get_sequence_path(args.name)
     if os.path.exists(path):
         os.remove(path)
         output({"action": "seq-delete", "name": args.name, "success": True})
     else:
-        error(f"Secuencia no encontrada: {args.name}")
+        error(f"Sequence not found: {args.name}")
 
 
 def cmd_seq_describe(args):
-    """Actualizar nombre visible y descripción de una secuencia."""
+    """Update sequence display name and description."""
     seq = load_sequence(args.name)
     if not seq:
-        error(f"Secuencia no encontrada: {args.name}")
+        error(f"Sequence not found: {args.name}")
     
     updated = False
     if args.display_name:
@@ -1262,11 +1262,11 @@ def cmd_seq_describe(args):
 
 
 # ============================================
-# COMANDOS DE ELEMENTOS (JSON)
+# ELEMENT COMMANDS (JSON)
 # ============================================
 
 def cmd_elem_add(args):
-    """Agregar o actualizar un elemento."""
+    """Add or update an element."""
     tags = args.tags.split(',') if args.tags else []
     elem = add_element(args.name, args.description or "", tags=tags)
     output({
@@ -1277,7 +1277,7 @@ def cmd_elem_add(args):
 
 
 def cmd_elem_add_image(args):
-    """Agregar una imagen a un elemento."""
+    """Add an image to an element."""
     elem = add_image_to_element(args.name, args.image)
     output({
         "action": "elem-add-image",
@@ -1287,10 +1287,10 @@ def cmd_elem_add_image(args):
 
 
 def cmd_elem_show(args):
-    """Mostrar un elemento."""
+    """Show an element."""
     elem = get_element(args.name)
     if not elem:
-        error(f"Elemento no encontrado: {args.name}")
+        error(f"Element not found: {args.name}")
     output({
         "action": "elem-show",
         "success": True,
@@ -1299,7 +1299,7 @@ def cmd_elem_show(args):
 
 
 def cmd_elem_list(args):
-    """Listar todos los elementos."""
+    """List all elements."""
     elements = load_elements()
     output({
         "action": "elem-list",
@@ -1309,12 +1309,12 @@ def cmd_elem_list(args):
 
 
 def cmd_elem_delete(args):
-    """Eliminar un elemento."""
+    """Delete an element."""
     elements = load_elements()
     name_key = args.name.lower().replace(' ', '_')
     
     if name_key not in elements:
-        error(f"Elemento no encontrado: {args.name}")
+        error(f"Element not found: {args.name}")
     
     del elements[name_key]
     save_elements(elements)
@@ -1327,11 +1327,11 @@ def cmd_elem_delete(args):
 
 
 # ============================================
-# COMANDOS DE SONIDOS
+# SOUND COMMANDS
 # ============================================
 
 def cmd_sounds_on(args):
-    """Activar sonidos."""
+    """Enable sounds."""
     result = enable_sounds()
     output({
         "action": "sounds-on",
@@ -1342,7 +1342,7 @@ def cmd_sounds_on(args):
 
 
 def cmd_sounds_off(args):
-    """Desactivar sonidos."""
+    """Disable sounds."""
     result = disable_sounds()
     output({
         "action": "sounds-off",
@@ -1353,7 +1353,7 @@ def cmd_sounds_off(args):
 
 
 def cmd_sounds_status(args):
-    """Estado de los sonidos."""
+    """Sound status."""
     status = get_sound_status()
     output({
         "action": "sounds-status",
@@ -1363,7 +1363,7 @@ def cmd_sounds_status(args):
 
 
 def cmd_sounds_volume(args):
-    """Ajustar volumen."""
+    """Adjust volume."""
     result = set_volume(args.volume)
     output({
         "action": "sounds-volume",
@@ -1374,61 +1374,61 @@ def cmd_sounds_volume(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Macro Agent - Control de UI para agentes IA")
-    subparsers = parser.add_subparsers(dest='command', help='Comandos disponibles')
+    parser = argparse.ArgumentParser(description="Macro Agent - UI control for AI agents")
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
     
-    # Búsqueda
-    p = subparsers.add_parser('search', help='Buscar elementos')
-    p.add_argument('query', help='Texto a buscar')
+    # Search
+    p = subparsers.add_parser('search', help='Search elements')
+    p.add_argument('query', help='Text to search')
     p.set_defaults(func=cmd_search)
     
-    p = subparsers.add_parser('find', help='Buscar por nombre')
-    p.add_argument('name', help='Nombre del elemento')
+    p = subparsers.add_parser('find', help='Find by name')
+    p.add_argument('name', help='Element name')
     p.set_defaults(func=cmd_find)
     
-    p = subparsers.add_parser('list', help='Listar elementos')
+    p = subparsers.add_parser('list', help='List elements')
     p.set_defaults(func=cmd_list)
     
-    p = subparsers.add_parser('near', help='Buscar cerca de coordenadas')
-    p.add_argument('coords', help='Coordenadas X,Y')
-    p.add_argument('--radius', type=int, default=100, help='Radio de búsqueda')
+    p = subparsers.add_parser('near', help='Find near coordinates')
+    p.add_argument('coords', help='X,Y coordinates')
+    p.add_argument('--radius', type=int, default=100, help='Search radius')
     p.set_defaults(func=cmd_near)
     
-    p = subparsers.add_parser('stats', help='Estadísticas')
+    p = subparsers.add_parser('stats', help='Statistics')
     p.set_defaults(func=cmd_stats)
     
     # Mouse
-    p = subparsers.add_parser('move', help='Mover mouse')
+    p = subparsers.add_parser('move', help='Move mouse')
     p.add_argument('x', type=int)
     p.add_argument('y', type=int)
     p.add_argument('--duration', type=float, default=0.5)
     p.set_defaults(func=cmd_move)
     
-    p = subparsers.add_parser('move-to', help='Mover a elemento')
-    p.add_argument('name', help='Nombre del elemento')
+    p = subparsers.add_parser('move-to', help='Move to element')
+    p.add_argument('name', help='Element name')
     p.add_argument('--duration', type=float, default=0.5)
     p.set_defaults(func=cmd_move_to)
     
-    p = subparsers.add_parser('click', help='Click en coordenadas')
+    p = subparsers.add_parser('click', help='Click at coordinates')
     p.add_argument('x', type=int)
     p.add_argument('y', type=int)
     p.set_defaults(func=cmd_click)
     
-    p = subparsers.add_parser('click-on', help='Click en elemento')
-    p.add_argument('name', help='Nombre del elemento')
+    p = subparsers.add_parser('click-on', help='Click on element')
+    p.add_argument('name', help='Element name')
     p.set_defaults(func=cmd_click_on)
     
-    p = subparsers.add_parser('double-click', help='Doble click')
+    p = subparsers.add_parser('double-click', help='Double-click')
     p.add_argument('x', type=int)
     p.add_argument('y', type=int)
     p.set_defaults(func=cmd_double_click)
     
-    p = subparsers.add_parser('right-click', help='Click derecho')
+    p = subparsers.add_parser('right-click', help='Right-click')
     p.add_argument('x', type=int)
     p.add_argument('y', type=int)
     p.set_defaults(func=cmd_right_click)
     
-    p = subparsers.add_parser('drag', help='Arrastrar')
+    p = subparsers.add_parser('drag', help='Drag')
     p.add_argument('x1', type=int)
     p.add_argument('y1', type=int)
     p.add_argument('x2', type=int)
@@ -1436,113 +1436,113 @@ def main():
     p.set_defaults(func=cmd_drag)
     
     p = subparsers.add_parser('scroll', help='Scroll')
-    p.add_argument('amount', type=int, help='Cantidad (negativo=abajo)')
-    p.add_argument('--at', help='Coordenadas X,Y')
+    p.add_argument('amount', type=int, help='Amount (negative=down)')
+    p.add_argument('--at', help='X,Y coordinates')
     p.set_defaults(func=cmd_scroll)
     
-    # Teclado
-    p = subparsers.add_parser('write', help='Escribir texto')
-    p.add_argument('text', help='Texto a escribir')
+    # Keyboard
+    p = subparsers.add_parser('write', help='Write text')
+    p.add_argument('text', help='Text to write')
     p.set_defaults(func=cmd_write)
     
-    p = subparsers.add_parser('press', help='Presionar tecla')
-    p.add_argument('key', help='Tecla')
+    p = subparsers.add_parser('press', help='Press key')
+    p.add_argument('key', help='Key')
     p.set_defaults(func=cmd_press)
     
-    p = subparsers.add_parser('hotkey', help='Combinación de teclas')
-    p.add_argument('keys', nargs='+', help='Teclas')
+    p = subparsers.add_parser('hotkey', help='Key combination')
+    p.add_argument('keys', nargs='+', help='Keys')
     p.set_defaults(func=cmd_hotkey)
     
     # Utilidades
-    p = subparsers.add_parser('mouse-pos', help='Posición del mouse')
+    p = subparsers.add_parser('mouse-pos', help='Mouse position')
     p.set_defaults(func=cmd_mouse_pos)
     
-    p = subparsers.add_parser('wait', help='Esperar')
+    p = subparsers.add_parser('wait', help='Wait')
     p.add_argument('seconds', type=float)
     p.set_defaults(func=cmd_wait)
     
-    p = subparsers.add_parser('screenshot', help='Captura de pantalla')
-    p.add_argument('filename', help='Nombre del archivo')
+    p = subparsers.add_parser('screenshot', help='Screenshot')
+    p.add_argument('filename', help='Filename')
     p.set_defaults(func=cmd_screenshot)
     
-    p = subparsers.add_parser('region-capture', help='Captura interactiva de región con mouse')
+    p = subparsers.add_parser('region-capture', help='Interactive region capture with mouse')
     p.set_defaults(func=cmd_region_capture)
     
-    # Ejecutar JSON
-    p = subparsers.add_parser('run', help='Ejecutar acciones desde JSON')
-    p.add_argument('json_str', help='JSON con acciones')
+    # Execute JSON
+    p = subparsers.add_parser('run', help='Execute actions from JSON')
+    p.add_argument('json_str', help='JSON with actions')
     p.set_defaults(func=cmd_run)
     
-    # Secuencias
-    p = subparsers.add_parser('seq-create', help='Crear secuencia')
-    p.add_argument('name', help='Nombre interno de la secuencia (sin espacios)')
-    p.add_argument('--display-name', '-n', dest='display_name', help='Nombre visible amigable')
-    p.add_argument('--description', '-d', help='Descripción de qué hace la secuencia')
+    # Sequences
+    p = subparsers.add_parser('seq-create', help='Create sequence')
+    p.add_argument('name', help='Internal sequence name (no spaces)')
+    p.add_argument('--display-name', '-n', dest='display_name', help='Friendly display name')
+    p.add_argument('--description', '-d', help='Description of what the sequence does')
     p.set_defaults(func=cmd_seq_create)
     
-    p = subparsers.add_parser('seq-add', help='Agregar acción a secuencia')
-    p.add_argument('name', help='Nombre de la secuencia')
-    p.add_argument('action', help='Acción (ej: "click-on btn_guardar" o "if-visible elemento")')
-    p.add_argument('--then', dest='then_actions', action='append', help='Acciones si la condición es verdadera (para if-visible)')
-    p.add_argument('--else', dest='else_actions', action='append', help='Acciones si la condición es falsa (para if-visible)')
+    p = subparsers.add_parser('seq-add', help='Add action to sequence')
+    p.add_argument('name', help='Sequence name')
+    p.add_argument('action', help='Action (e.g. "click-on save_button" or "if-visible element")')
+    p.add_argument('--then', dest='then_actions', action='append', help='Actions if condition is true (for if-visible)')
+    p.add_argument('--else', dest='else_actions', action='append', help='Actions if condition is false (for if-visible)')
     p.set_defaults(func=cmd_seq_add)
     
-    p = subparsers.add_parser('seq-show', help='Mostrar secuencia')
-    p.add_argument('name', help='Nombre de la secuencia')
+    p = subparsers.add_parser('seq-show', help='Show sequence')
+    p.add_argument('name', help='Sequence name')
     p.set_defaults(func=cmd_seq_show)
     
-    p = subparsers.add_parser('seq-run', help='Ejecutar secuencia')
-    p.add_argument('name', help='Nombre de la secuencia')
+    p = subparsers.add_parser('seq-run', help='Run sequence')
+    p.add_argument('name', help='Sequence name')
     p.set_defaults(func=cmd_seq_run)
     
-    p = subparsers.add_parser('seq-list', help='Listar secuencias')
+    p = subparsers.add_parser('seq-list', help='List sequences')
     p.set_defaults(func=cmd_seq_list)
     
-    p = subparsers.add_parser('seq-delete', help='Eliminar secuencia')
-    p.add_argument('name', help='Nombre de la secuencia')
+    p = subparsers.add_parser('seq-delete', help='Delete sequence')
+    p.add_argument('name', help='Sequence name')
     p.set_defaults(func=cmd_seq_delete)
     
-    p = subparsers.add_parser('seq-describe', help='Actualizar nombre/descripción de secuencia')
-    p.add_argument('name', help='Nombre interno de la secuencia')
-    p.add_argument('--display-name', '-n', dest='display_name', help='Nuevo nombre visible')
-    p.add_argument('--description', '-d', help='Nueva descripción')
+    p = subparsers.add_parser('seq-describe', help='Update sequence name/description')
+    p.add_argument('name', help='Internal sequence name')
+    p.add_argument('--display-name', '-n', dest='display_name', help='New display name')
+    p.add_argument('--description', '-d', help='New description')
     p.set_defaults(func=cmd_seq_describe)
     
-    # Elementos (JSON)
-    p = subparsers.add_parser('elem-add', help='Agregar/actualizar elemento')
-    p.add_argument('name', help='Nombre del elemento')
-    p.add_argument('--description', '-d', help='Descripción')
-    p.add_argument('--tags', '-t', help='Tags separados por coma')
+    # Elements (JSON)
+    p = subparsers.add_parser('elem-add', help='Add/update element')
+    p.add_argument('name', help='Element name')
+    p.add_argument('--description', '-d', help='Description')
+    p.add_argument('--tags', '-t', help='Comma-separated tags')
     p.set_defaults(func=cmd_elem_add)
     
-    p = subparsers.add_parser('elem-add-image', help='Agregar imagen a elemento')
-    p.add_argument('name', help='Nombre del elemento')
-    p.add_argument('image', help='Nombre del archivo de imagen')
+    p = subparsers.add_parser('elem-add-image', help='Add image to element')
+    p.add_argument('name', help='Element name')
+    p.add_argument('image', help='Image filename')
     p.set_defaults(func=cmd_elem_add_image)
     
-    p = subparsers.add_parser('elem-show', help='Mostrar elemento')
-    p.add_argument('name', help='Nombre del elemento')
+    p = subparsers.add_parser('elem-show', help='Show element')
+    p.add_argument('name', help='Element name')
     p.set_defaults(func=cmd_elem_show)
     
-    p = subparsers.add_parser('elem-list', help='Listar elementos')
+    p = subparsers.add_parser('elem-list', help='List elements')
     p.set_defaults(func=cmd_elem_list)
     
-    p = subparsers.add_parser('elem-delete', help='Eliminar elemento')
-    p.add_argument('name', help='Nombre del elemento')
+    p = subparsers.add_parser('elem-delete', help='Delete element')
+    p.add_argument('name', help='Element name')
     p.set_defaults(func=cmd_elem_delete)
     
-    # Sonidos
-    p = subparsers.add_parser('sounds-on', help='Activar sonidos')
+    # Sounds
+    p = subparsers.add_parser('sounds-on', help='Enable sounds')
     p.set_defaults(func=cmd_sounds_on)
     
-    p = subparsers.add_parser('sounds-off', help='Desactivar sonidos')
+    p = subparsers.add_parser('sounds-off', help='Disable sounds')
     p.set_defaults(func=cmd_sounds_off)
     
-    p = subparsers.add_parser('sounds-status', help='Estado de los sonidos')
+    p = subparsers.add_parser('sounds-status', help='Sound status')
     p.set_defaults(func=cmd_sounds_status)
     
-    p = subparsers.add_parser('sounds-volume', help='Ajustar volumen')
-    p.add_argument('volume', type=float, help='Volumen 0.0-1.0')
+    p = subparsers.add_parser('sounds-volume', help='Adjust volume')
+    p.add_argument('volume', type=float, help='Volume 0.0-1.0')
     p.set_defaults(func=cmd_sounds_volume)
     
     args = parser.parse_args()

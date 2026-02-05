@@ -1,25 +1,25 @@
-# Arquitectura Belanova
+# Belanova Architecture
 
-## Capas
+## Layers
 
-- `src/belanova/app`: orquestación de runtime, diagnóstico y utilidades CLI.
-- `src/belanova/core`: configuración y cliente LLM (OpenRouter).
-- `src/belanova/asr`: servicios de reconocimiento de voz.
-- `src/belanova/tts`: servicios de síntesis de voz.
-- `src/belanova/audio`: captura PTT y efectos de audio.
-- `src/belanova/tools`: ejecución de herramientas locales/MCP.
-- `src/belanova/integrations`: puentes externos (MCP skill-bridge).
+- `src/belanova/app`: runtime orchestration, diagnostics, and CLI utilities.
+- `src/belanova/core`: configuration and LLM client (OpenRouter).
+- `src/belanova/asr`: speech recognition services.
+- `src/belanova/tts`: speech synthesis services.
+- `src/belanova/audio`: push-to-talk capture and audio effects.
+- `src/belanova/tools`: local/MCP tool execution.
+- `src/belanova/integrations`: external bridges (MCP skill-bridge).
 
-## Estructura
+## Structure
 
 ```text
 belanova/
-├── assets/audio/               # sonidos runtime (thinking/error)
-├── docs/context/               # prompt/contexto de sistema
-├── pyproject.toml              # empaquetado y entrypoints CLI
-├── scripts/                    # bootstrap, instalación, utilidades PDF
-├── skills/                     # skills core del workspace (macro-agent, region-capture)
-├── mcp/skill-bridge/           # implementación portable del servidor MCP
+├── assets/audio/               # runtime sounds (thinking/error)
+├── docs/context/               # system prompt/context
+├── pyproject.toml              # packaging and CLI entrypoints
+├── scripts/                    # bootstrap, installation, PDF utilities
+├── skills/                     # workspace core skills (macro-agent, region-capture)
+├── mcp/skill-bridge/           # portable MCP server implementation
 └── src/
     └── belanova/
         ├── app/
@@ -39,16 +39,16 @@ belanova/
         └── integrations/mcp_bridge.py
 ```
 
-## Principios
+## Principles
 
-- **Separación por responsabilidad:** runtime no mezcla implementación de servicios.
-- **Modo estricto:** no hay wrappers legacy en raíz para app runtime.
-- **CLI instalable:** comando directo `belanova` y utilidades (`belanova-doctor`, `belanova-tts-test`).
-- **Core minimalista de skills:** el repo mantiene `macro-agent` y `region-capture` locales y usa skills globales vía sync.
-- **Un solo bootstrap:** `scripts/bootstrap.py` mantiene instalación reproducible.
+- **Separation of concerns:** runtime orchestration stays separate from service implementations.
+- **Strict mode:** no legacy root wrappers for runtime app logic.
+- **Installable CLI:** direct command `belanova` plus helpers (`belanova-doctor`, `belanova-tts-test`).
+- **Minimal core skills:** the repo keeps `macro-agent` and `region-capture` locally and uses global skills via sync.
+- **Single bootstrap flow:** `scripts/bootstrap.py` keeps installation reproducible.
 
-## Convenciones recomendadas
+## Recommended Conventions
 
-- Nuevo código de aplicación entra en `src/belanova/...`.
-- Integraciones externas solo en `src/belanova/integrations`.
-- Scripts operativos en `scripts/`; lógica reusable en `src/`.
+- New application code goes under `src/belanova/...`.
+- External integrations stay under `src/belanova/integrations`.
+- Operational scripts live in `scripts/`; reusable logic goes in `src/`.

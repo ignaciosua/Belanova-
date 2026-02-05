@@ -20,7 +20,7 @@ class ToolResult:
 def _safe_path(path: str) -> Path:
     target = (ROOT_DIR / path).resolve()
     if not str(target).startswith(str(ROOT_DIR)):
-        raise ValueError("Path fuera del directorio permitido")
+        raise ValueError("Path is outside the allowed directory")
     return target
 
 
@@ -45,7 +45,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "run_shell",
-                    "description": "Ejecuta un comando de shell en el proyecto.",
+                    "description": "Run a shell command inside the project.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -60,7 +60,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "read_file",
-                    "description": "Lee un archivo del proyecto.",
+                    "description": "Read a file from the project.",
                     "parameters": {
                         "type": "object",
                         "properties": {"path": {"type": "string"}},
@@ -72,7 +72,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "write_file",
-                    "description": "Escribe o crea un archivo dentro del proyecto.",
+                    "description": "Write or create a file inside the project.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -87,7 +87,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "list_dir",
-                    "description": "Lista archivos en un directorio del proyecto.",
+                    "description": "List files in a project directory.",
                     "parameters": {
                         "type": "object",
                         "properties": {"path": {"type": "string", "default": "."}},
@@ -98,7 +98,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "search_text",
-                    "description": "Busca texto en archivos del proyecto (usa ripgrep).",
+                    "description": "Search text in project files (uses ripgrep).",
                     "parameters": {
                         "type": "object",
                         "properties": {"pattern": {"type": "string"}},
@@ -118,7 +118,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "mcp_get_skill_help",
-                    "description": "Obtiene ayuda detallada de un skill MCP.",
+                    "description": "Get detailed help for an MCP skill.",
                     "parameters": {
                         "type": "object",
                         "properties": {"skill_name": {"type": "string"}},
@@ -130,7 +130,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "mcp_run_skill",
-                    "description": "Ejecuta un skill MCP con argumentos opcionales.",
+                    "description": "Run an MCP skill with optional arguments.",
                     "parameters": {
                         "type": "object",
                         "properties": {
@@ -145,7 +145,7 @@ class ToolExecutor:
                 "type": "function",
                 "function": {
                     "name": "mcp_refresh_skills",
-                    "description": "Refresca lista de skills MCP.",
+                    "description": "Refresh MCP skills list.",
                     "parameters": {"type": "object", "properties": {}},
                 },
             },
@@ -154,7 +154,7 @@ class ToolExecutor:
     def execute(self, name: str, args: dict[str, Any]) -> ToolResult:
         try:
             if not self._confirm(name, args):
-                result = ToolResult(ok=False, content="Acción cancelada por el usuario.")
+                result = ToolResult(ok=False, content="Action canceled by user.")
                 self.on_tool_end(name, args, result)
                 return result
             self.on_tool_start(name, args)
@@ -194,11 +194,11 @@ class ToolExecutor:
                 result = self._mcp_refresh_skills()
                 self.on_tool_end(name, args, result)
                 return result
-            result = ToolResult(ok=False, content=f"Herramienta desconocida: {name}")
+            result = ToolResult(ok=False, content=f"Unknown tool: {name}")
             self.on_tool_end(name, args, result)
             return result
         except Exception as exc:
-            result = ToolResult(ok=False, content=f"Error en {name}: {exc}")
+            result = ToolResult(ok=False, content=f"Error in {name}: {exc}")
             self.on_tool_end(name, args, result)
             return result
 
@@ -210,23 +210,23 @@ class ToolExecutor:
         try:
             if name == "run_shell":
                 cmd = args.get("command", "")
-                return f"Ejecutar comando en la terminal: {cmd}"
+                return f"Run terminal command: {cmd}"
             if name == "read_file":
-                return f"Leer el archivo: {args.get('path', '')}"
+                return f"Read file: {args.get('path', '')}"
             if name == "write_file":
-                return f"Escribir el archivo: {args.get('path', '')}"
+                return f"Write file: {args.get('path', '')}"
             if name == "list_dir":
-                return f"Listar el directorio: {args.get('path', '.')}"
+                return f"List directory: {args.get('path', '.')}"
             if name == "search_text":
-                return f"Buscar texto: {args.get('pattern', '')}"
+                return f"Search text: {args.get('pattern', '')}"
             if name == "mcp_list_skills":
-                return "Listar skills MCP"
+                return "List MCP skills"
             if name == "mcp_get_skill_help":
-                return f"Obtener ayuda del skill MCP: {args.get('skill_name', '')}"
+                return f"Get MCP skill help: {args.get('skill_name', '')}"
             if name == "mcp_run_skill":
-                return f"Ejecutar skill MCP: {args.get('skill_name', '')}"
+                return f"Run MCP skill: {args.get('skill_name', '')}"
             if name == "mcp_refresh_skills":
-                return "Refrescar skills MCP"
+                return "Refresh MCP skills"
         except Exception:
             pass
         try:
@@ -236,10 +236,10 @@ class ToolExecutor:
 
     def _run_shell(self, args: dict[str, Any]) -> ToolResult:
         if not self.allow_shell:
-            return ToolResult(ok=False, content="Ejecución de shell deshabilitada")
+            return ToolResult(ok=False, content="Shell execution is disabled")
         command = args.get("command", "")
         timeout_s = int(args.get("timeout_s", 60))
-        self.narrator(f"Voy a ejecutar un comando: {command}")
+        self.narrator(f"Running command: {command}")
         completed = subprocess.run(
             command,
             shell=True,
@@ -258,27 +258,27 @@ class ToolExecutor:
 
     def _read_file(self, args: dict[str, Any]) -> ToolResult:
         path = _safe_path(args.get("path", ""))
-        self.narrator(f"Leyendo el archivo {path}")
+        self.narrator(f"Reading file {path}")
         content = path.read_text(encoding="utf-8")
         return ToolResult(ok=True, content=content)
 
     def _write_file(self, args: dict[str, Any]) -> ToolResult:
         path = _safe_path(args.get("path", ""))
         content = args.get("content", "")
-        self.narrator(f"Escribiendo el archivo {path}")
+        self.narrator(f"Writing file {path}")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return ToolResult(ok=True, content="ok")
 
     def _list_dir(self, args: dict[str, Any]) -> ToolResult:
         path = _safe_path(args.get("path", "."))
-        self.narrator(f"Listando directorio {path}")
+        self.narrator(f"Listing directory {path}")
         entries = sorted([p.name for p in path.iterdir()])
         return ToolResult(ok=True, content=json.dumps(entries, ensure_ascii=False))
 
     def _search_text(self, args: dict[str, Any]) -> ToolResult:
         pattern = args.get("pattern", "")
-        self.narrator(f"Buscando texto: {pattern}")
+        self.narrator(f"Searching text: {pattern}")
         cmd = ["rg", "-n", pattern, "."]
         completed = subprocess.run(
             cmd,
@@ -294,24 +294,24 @@ class ToolExecutor:
         return ToolResult(ok=payload["ok"], content=json.dumps(payload, ensure_ascii=False))
 
     def _mcp_list_skills(self) -> ToolResult:
-        self.narrator("Listando skills MCP")
+        self.narrator("Listing MCP skills")
         result = call_skill_bridge("list_skills", {})
         return ToolResult(ok=not result.get("isError", False), content=result.get("content", ""))
 
     def _mcp_get_skill_help(self, args: dict[str, Any]) -> ToolResult:
         skill_name = args.get("skill_name", "")
-        self.narrator(f"Obteniendo ayuda de skill MCP: {skill_name}")
+        self.narrator(f"Getting MCP skill help: {skill_name}")
         result = call_skill_bridge("get_skill_help", {"skill_name": skill_name})
         return ToolResult(ok=not result.get("isError", False), content=result.get("content", ""))
 
     def _mcp_run_skill(self, args: dict[str, Any]) -> ToolResult:
         skill_name = args.get("skill_name", "")
         skill_args = args.get("args", [])
-        self.narrator(f"Ejecutando skill MCP: {skill_name}")
+        self.narrator(f"Running MCP skill: {skill_name}")
         result = call_skill_bridge("run_skill", {"skill_name": skill_name, "args": skill_args})
         return ToolResult(ok=not result.get("isError", False), content=result.get("content", ""))
 
     def _mcp_refresh_skills(self) -> ToolResult:
-        self.narrator("Refrescando skills MCP")
+        self.narrator("Refreshing MCP skills")
         result = call_skill_bridge("refresh_skills", {})
         return ToolResult(ok=not result.get("isError", False), content=result.get("content", ""))

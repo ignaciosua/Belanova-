@@ -9,8 +9,8 @@ from belanova.tools.executor import ToolExecutor
 
 
 def main() -> int:
-    print("[diag] iniciando self-check...")
-    print("[diag] habla mientras mantienes la tecla push-to-talk y suelta para enviar.")
+    print("[diag] starting self-check...")
+    print("[diag] speak while holding push-to-talk, then release to send.")
 
     asr = create_asr(settings)
 
@@ -30,10 +30,10 @@ def main() -> int:
         )
         print("[diag] tts: ok")
     except Exception as exc:
-        print(f"[diag] tts: deshabilitado ({exc})")
+        print(f"[diag] tts: disabled ({exc})")
 
     def narrate(text: str) -> None:
-        print(f"[accion] {text}")
+        print(f"[action] {text}")
         if tts is not None:
             tts.speak(text)
 
@@ -54,7 +54,7 @@ def main() -> int:
     recorder = PushToTalkRecorder(settings.ptt_key, settings.sample_rate)
     chunk = recorder.record_once()
     if chunk is None or chunk.samples.size == 0:
-        print("[diag] audio: fallo o vacío")
+        print("[diag] audio: failed or empty")
         return 1
     print("[diag] audio: ok")
 
@@ -64,11 +64,11 @@ def main() -> int:
         return 1
 
     response = agent.run(
-        "Responde con una frase corta confirmando que OpenRouter funciona."
+        "Reply with a short sentence confirming that OpenRouter works."
     )
     print(f"[diag] openrouter: {response}")
     if tts is not None:
-        tts.speak("Diagnóstico completado")
+        tts.speak("Diagnostics completed")
     print("[diag] ok")
     return 0
 

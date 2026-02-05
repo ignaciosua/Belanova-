@@ -1,7 +1,7 @@
 {
   "browser_icon": {
     "name": "browser_icon",
-    "description": "Icono genérico del navegador en la barra de tareas",
+    "description": "Generic browser icon in the taskbar",
     "images": [
       "browser_icon_example.png"
     ],
@@ -13,7 +13,7 @@
   },
   "chat_tab": {
     "name": "chat_tab",
-    "description": "Pestaña de una app de chat web",
+    "description": "Web chat app tab",
     "images": [
       "chat_tab_example.png"
     ],
@@ -25,7 +25,7 @@
   },
   "message_input": {
     "name": "message_input",
-    "description": "Caja de texto para escribir mensajes",
+    "description": "Text input box for typing messages",
     "images": [
       "message_input_example.png"
     ],
@@ -37,7 +37,7 @@
   },
   "send_button": {
     "name": "send_button",
-    "description": "Botón para enviar el mensaje",
+    "description": "Button used to send the message",
     "images": [
       "send_button_example.png"
     ],
@@ -49,7 +49,7 @@
   },
   "search_input": {
     "name": "search_input",
-    "description": "Campo de búsqueda genérico",
+    "description": "Generic search input field",
     "images": [
       "search_input_example.png"
     ],

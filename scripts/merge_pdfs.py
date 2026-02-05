@@ -28,11 +28,11 @@ def _iter_pdf_paths(inputs: list[str], recursive: bool, natural_sort: bool) -> l
 
     missing = [str(p) for p in pdfs if not p.exists()]
     if missing:
-        raise FileNotFoundError("No existe(n): " + ", ".join(missing))
+        raise FileNotFoundError("Does not exist: " + ", ".join(missing))
 
     for p in pdfs:
         if p.suffix.lower() != ".pdf":
-            raise ValueError(f"No es PDF: {p}")
+            raise ValueError(f"Not a PDF: {p}")
 
     if natural_sort:
         pdfs.sort(key=lambda x: _natural_key(x.name))
@@ -50,7 +50,7 @@ def merge_pdfs(
     keep_metadata: bool,
 ) -> None:
     if output.exists() and not overwrite:
-        raise FileExistsError(f"Ya existe: {output} (usa --overwrite)")
+        raise FileExistsError(f"Already exists: {output} (use --overwrite)")
 
     writer = PdfWriter()
     first_metadata = None
@@ -59,10 +59,10 @@ def merge_pdfs(
         reader = PdfReader(str(path))
         if reader.is_encrypted:
             if not password:
-                raise RuntimeError(f"PDF encriptado (falta --password): {path}")
+                raise RuntimeError(f"Encrypted PDF (missing --password): {path}")
             ok = reader.decrypt(password)
             if not ok:
-                raise RuntimeError(f"Password incorrecta para: {path}")
+                raise RuntimeError(f"Invalid password for: {path}")
 
         if first_metadata is None:
             first_metadata = getattr(reader, "metadata", None)
@@ -76,7 +76,7 @@ def merge_pdfs(
                 {k: ("" if v is None else str(v)) for k, v in dict(first_metadata).items()}
             )
         except Exception:
-            # Metadata nunca debe romper la fusión.
+            # Metadata should never break merge behavior.
             pass
 
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -87,31 +87,31 @@ def merge_pdfs(
 def _parse_args(argv: list[str]) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description=(
-            "Fusiona varios PDF (o una carpeta con PDFs) en un solo archivo.\n\n"
-            "Ejemplos:\n"
-            "  python scripts/merge_pdfs.py -o salida.pdf a.pdf b.pdf\n"
-            "  python scripts/merge_pdfs.py -o salida.pdf ./partes --recursive\n"
+            "Merge multiple PDFs (or a folder of PDFs) into a single file.\n\n"
+            "Examples:\n"
+            "  python scripts/merge_pdfs.py -o output.pdf a.pdf b.pdf\n"
+            "  python scripts/merge_pdfs.py -o output.pdf ./parts --recursive\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
     p.add_argument(
         "inputs",
         nargs="+",
-        help="Archivos PDF y/o carpetas (si es carpeta, toma *.pdf dentro).",
+        help="PDF files and/or folders (if folder, includes *.pdf inside).",
     )
-    p.add_argument("-o", "--output", required=True, help="Ruta del PDF resultante.")
-    p.add_argument("--recursive", action="store_true", help="Busca PDFs recursivamente en carpetas.")
+    p.add_argument("-o", "--output", required=True, help="Output PDF path.")
+    p.add_argument("--recursive", action="store_true", help="Search PDFs recursively in folders.")
     p.add_argument(
         "--no-natural-sort",
         action="store_true",
-        help="Desactiva orden natural (p.ej. parte2 antes que parte10).",
+        help="Disable natural sort (e.g., part2 before part10).",
     )
-    p.add_argument("--overwrite", action="store_true", help="Sobrescribe el output si existe.")
-    p.add_argument("--password", help="Password para PDFs encriptados (misma para todos).")
+    p.add_argument("--overwrite", action="store_true", help="Overwrite output if it exists.")
+    p.add_argument("--password", help="Password for encrypted PDFs (same for all).")
     p.add_argument(
         "--no-metadata",
         action="store_true",
-        help="No copia metadata (título/autor) del primer PDF.",
+        help="Do not copy metadata (title/author) from the first PDF.",
     )
     return p.parse_args(argv)
 
@@ -125,7 +125,7 @@ def main(argv: list[str]) -> int:
             natural_sort=not bool(args.no_natural_sort),
         )
         if not pdf_paths:
-            raise RuntimeError("No se encontraron PDFs para fusionar.")
+            raise RuntimeError("No PDFs were found to merge.")
         merge_pdfs(
             pdf_paths,
             Path(args.output).expanduser(),

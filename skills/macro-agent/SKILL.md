@@ -18,7 +18,7 @@ Desktop automation and UI control skill with **image recognition**.
 
 ### Common Workflow: Send Message to Contact
 
-When user says "send message to X" or "envía mensaje a X":
+When user says "send message to X":
 
 ```
 1. seq-list                         # Check available sequences
@@ -142,9 +142,9 @@ This command proxies to the dedicated `region-capture` skill and writes to share
 
 Keys: `f`=freeze, `c`/`Space`=capture, `+/-`=resize, `q`/`ESC`=quit
 
-## 📱 Example: Send WhatsApp Message
+## Example: Send Message
 
-User says: "Envía un mensaje diciendo hola"
+User says: "Send a message saying hello"
 
 **CORRECT approach:**
 ```bash
@@ -155,7 +155,7 @@ seq-list
 seq-run example_send_message
 
 # 3. Type and send
-write "hola"
+write "hello"
 press enter
 ```
 

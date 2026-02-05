@@ -41,7 +41,7 @@ def find_requirements(skill_dir: Path):
 def main():
     paths = load_skill_paths()
     if not paths:
-        print("No se encontraron SKILL_BRIDGE_PATHS.")
+        print("No SKILL_BRIDGE_PATHS were found.")
         return 1
 
     reqs = []
@@ -51,10 +51,10 @@ def main():
             reqs.append(req)
             print(f"[skill] {skill.name} -> {req}")
         else:
-            print(f"[skill] {skill.name} -> sin requirements.txt")
+            print(f"[skill] {skill.name} -> no requirements.txt")
 
     if not reqs:
-        print("No hay requirements para instalar.")
+        print("No requirements to install.")
         return 0
 
     for req in reqs:

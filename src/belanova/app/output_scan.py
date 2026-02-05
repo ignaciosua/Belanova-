@@ -10,7 +10,7 @@ def tone(freq=440.0, duration=1.0, samplerate=48000):
 
 def main() -> int:
     devices = sd.query_devices()
-    print("[scan] probando salidas de audio...")
+    print("[scan] testing audio outputs...")
     for idx, dev in enumerate(devices):
         if dev.get("max_output_channels", 0) <= 0:
             continue
@@ -22,9 +22,9 @@ def main() -> int:
             sd.play(audio, samplerate=rate, device=idx)
             sd.wait()
         except Exception as exc:
-            print(f"[scan] error en device {idx}: {exc}")
+            print(f"[scan] error on device {idx}: {exc}")
         time.sleep(0.3)
-    print("\n[scan] terminado. Dime el ID donde escuchaste el tono.")
+    print("\n[scan] done. Tell me the ID where you heard the tone.")
     return 0
 
 

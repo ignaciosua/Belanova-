@@ -10,16 +10,16 @@ BELANOVA_TTS_TEST_BIN := $(VENV)/bin/belanova-tts-test
 .PHONY: help setup setup-system setup-client sync-skills sync-skills-all run doctor tts-test install-skill-deps
 
 help:
-	@echo "Targets disponibles:"
-	@echo "  make setup         -> instala deps + skill-bridge + mcp.json"
-	@echo "  make setup-system  -> setup + paquetes del sistema via apt-get"
-	@echo "  make setup-client  -> setup 1 comando para Linux cliente"
-	@echo "  make sync-skills   -> trae solo skills core al workspace"
-	@echo "  make sync-skills-all -> trae todas las skills detectadas"
-	@echo "  make run           -> ejecuta belanova runtime"
-	@echo "  make doctor        -> ejecuta diagnóstico"
-	@echo "  make tts-test      -> prueba rápida de TTS"
-	@echo "  make install-skill-deps -> instala requirements de skills"
+	@echo "Available targets:"
+	@echo "  make setup         -> install deps + skill-bridge + mcp.json"
+	@echo "  make setup-system  -> setup + system packages via apt-get"
+	@echo "  make setup-client  -> one-command setup for Linux clients"
+	@echo "  make sync-skills   -> sync core skills into workspace"
+	@echo "  make sync-skills-all -> sync all detected skills"
+	@echo "  make run           -> run belanova runtime"
+	@echo "  make doctor        -> run diagnostics"
+	@echo "  make tts-test      -> quick TTS test"
+	@echo "  make install-skill-deps -> install skill requirements"
 
 setup:
 	bash scripts/install_all.sh

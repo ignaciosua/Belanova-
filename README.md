@@ -1,5 +1,27 @@
 # Belanova (Whisper + OpenRouter + Kokoro)
 
+## Quick Start (One Command)
+If you just want it running on Linux, use:
+
+```bash
+bash scripts/client_linux_install.sh
+```
+
+Then run:
+
+```bash
+belanova
+```
+
+## What This Project Is
+Belanova is a voice-first desktop assistant that combines:
+- Speech-to-text (local Whisper or OpenAI Whisper API)
+- LLM reasoning and tool orchestration through OpenRouter
+- Text-to-speech with Kokoro
+- MCP-integrated automation skills (`macro-agent`, `region-capture`)
+
+It is designed so a user can install and start using the app with minimal setup.
+
 ## Architecture (by layer)
 - Application code: `src/belanova/`
 - Installation/ops scripts: `scripts/`
@@ -24,65 +46,32 @@ sudo apt-get install -y espeak-ng libportaudio2
 ```
 
 ## Configuration
-Create `.env` with at least:
+Bootstrap copies `.env.example` to `.env` automatically if `.env` is missing.
+
+Minimum required values:
 
 ```env
 OPENROUTER_API_KEY=...
 OPENROUTER_MODEL=openai/gpt-4o-mini
 OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 OPENROUTER_PROVIDER=openai
-
-# Optional ASR API mode
-OPENAI_API_KEY=
-OPENAI_BASE_URL=https://api.openai.com/v1
-WHISPER_PROVIDER=auto      # auto|openai|local
-WHISPER_API_MODEL=whisper-1
-WHISPER_API_TIMEOUT_S=60
-
-# Local Whisper fallback
-WHISPER_MODEL_ID=openai/whisper-large-v3-turbo
-WHISPER_LANGUAGE=spanish
-ASR_WARMUP=1
-
-PTT_KEY=space
-AUDIO_OUTPUT_DEVICE=
-
-KOKORO_LANG_CODE=e
-KOKORO_VOICE=ef_dora
-KOKORO_SAMPLE_RATE=24000
-TTS_PLAYBACK=sd+aplay
-TTS_SPEED=1.0
-TTS_TIME_STRETCH=1
-TTS_STRETCH_ENGINE=rubberband
-TTS_SIMPLIFY=1
-
-MAX_CONTEXT_TOKENS=90000
-SUMMARY_TARGET_TOKENS=6000
-ALLOW_SHELL=1
-MAX_TOOL_ITERS=8
 ```
 
-ASR behavior:
+ASR options:
 - `WHISPER_PROVIDER=auto` (default): uses OpenAI API when `OPENAI_API_KEY` is set; otherwise uses local Whisper.
 - `WHISPER_PROVIDER=openai`: prefers OpenAI API (falls back to local if no key).
 - `WHISPER_PROVIDER=local`: always local Whisper.
 
-## One-command installation (recommended)
+Full example config is in `.env.example`.
 
-### Linux client setup
-Installs system + Python deps, configures MCP/skill-bridge, syncs core skills, and creates launchers:
-
-```bash
-bash scripts/client_linux_install.sh
-```
-
-### Standard setup
+## Install Options
+Standard setup:
 
 ```bash
 bash scripts/install_all.sh
 ```
 
-Options:
+Useful variants:
 
 ```bash
 # Include apt system dependencies
@@ -98,7 +87,7 @@ python scripts/bootstrap.py --torch default
 python scripts/bootstrap.py --no-sync-skills
 ```
 
-## Makefile shortcuts
+## Makefile Shortcuts
 
 ```bash
 make setup
